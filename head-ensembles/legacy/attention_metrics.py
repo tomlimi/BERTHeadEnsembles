@@ -61,8 +61,8 @@ def plot_matrix(matrix):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument("-a", "--attentions", required=True, help="NPZ file with attentions")
-    ap.add_argument("-t", "--tokens", required=True, help="Labels (tokens) separated by spaces")
+    ap.add_argument("attentions", required=True, help="NPZ file with attentions")
+    ap.add_argument("tokens", required=True, help="Labels (tokens) separated by spaces")
 
     ap.add_argument("-u", "--uas", help="Output uas measuere into this file")
     ap.add_argument("-c", "--conllu", help="Eval against the given conllu file")
