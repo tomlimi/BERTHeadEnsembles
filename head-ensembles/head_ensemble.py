@@ -1,6 +1,6 @@
 import argparse
 import numpy as np
-from collections import defaultdict
+import json
 
 from dependency import Dependency
 from atttention_wrapper import AttentionWrapper
@@ -12,10 +12,12 @@ HEADS_TO_CHECK = 25
 
 class HeadEnsemble():
     MAX_ENSEMBLE_SIZE = 4
-    def __init__(self):
+    def __init__(self, relation_label):
         self.ensemble = list()
         self.max_metric = 0.
         self.metric_history = list()
+
+        self.relation_label = relation_label
 
     def consider_candidate(self, candidate, metric, attn_wrapper):
 
@@ -46,12 +48,12 @@ class HeadEnsemble():
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument("attentions", required=True, help="NPZ file with attentions")
-    ap.add_argument("tokens", required=True, help="Labels (tokens) separated by spaces")
-    ap.add_argument("conll", help="Conll file for head selection.")
+    ap.add_argument("attentions", required=True, type=str, help="NPZ file with attentions")
+    ap.add_argument("tokens", required=True, type=str, help="Labels (tokens) separated by spaces")
+    ap.add_argument("conll",required=True, type=str, help="Conll file for head selection.")
 
-    ap.add_argument("-m", "--metric", help="Metric  used ")\
-
+    ap.add_argument("-m", "--metric", type=str, default="DepAcc", help="Metric  used ")
+    ap.add_argument("-j", "--json", type=str, help="Output json with the heads")
     # other arguments
 
     ap.add_argument("-s", "--sentences", nargs='*', type=int, default=None,
@@ -63,16 +65,23 @@ if __name__ == '__main__':
     bert_attns = AttentionWrapper(args.attentions, dependency_tree)
 
     metric = None
-    head_ensembles = dict(HeadEnsemble)
-    for relation_label in dependency_tree.label_map.keys:
-        if args.metric.lower() == "depacc":
-            metric = DepAcc(dependency_tree.relations, relation_label)
-        else:
-            raise ValueError("Unknown metric! Available metrics: DepAcc")
-        print(f"Finding Head Ensemble for label: {relation_label}")
+    head_ensembles = dict()
+    for direction in ['d2p', 'p2d']:
+        for relation_label in dependency_tree.label_map.keys:
+            if args.metric.lower() == "depacc":
+                metric = DepAcc(dependency_tree.relations, relation_label, dependent2parent=(direction=='d2p'))
+            else:
+                raise ValueError("Unknown metric! Available metrics: DepAcc")
+            print(f"Finding Head Ensemble for label: {relation_label}")
+            relation_label_directional = relation_label + '-' + direction
 
-        metric_grid = bert_attns.calc_metric_all_heads(metric)
-        heads_ids = np.argsort(metric_grid, axis=None)[-HEADS_TO_CHECK:][::-1]
 
-        for candidate in np.unravel_index(heads_ids, (12,12)):
-            head_ensembles[relation_label].consider_candidate(candidate)
+            metric_grid = bert_attns.calc_metric_all_heads(metric)
+            heads_ids = np.argsort(metric_grid, axis=None)[-HEADS_TO_CHECK:][::-1]
+
+            for candidate in np.unravel_index(heads_ids, (12,12)):
+                head_ensembles[relation_label_directional].consider_candidate(candidate)
+
+    if args.json:
+        with open(args.json, 'w') as outj:
+            json.dump(head_ensembles, fp=outj)
