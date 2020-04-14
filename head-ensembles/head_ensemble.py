@@ -49,9 +49,9 @@ class HeadEnsemble():
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
-    ap.add_argument("attentions", required=True, type=str, help="NPZ file with attentions")
-    ap.add_argument("tokens", required=True, type=str, help="Labels (tokens) separated by spaces")
-    ap.add_argument("conll",required=True, type=str, help="Conll file for head selection.")
+    ap.add_argument("attentions", type=str, help="NPZ file with attentions")
+    ap.add_argument("tokens", type=str, help="Labels (tokens) separated by spaces")
+    ap.add_argument("conll", type=str, help="Conll file for head selection.")
 
     ap.add_argument("-m", "--metric", type=str, default="DepAcc", help="Metric  used ")
     ap.add_argument("-j", "--json", type=str, help="Output json with the heads")
