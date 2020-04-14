@@ -88,4 +88,4 @@ if __name__ == '__main__':
 
     if args.json:
         with open(args.json, 'w') as outj:
-            json.dump(head_ensembles, fp=outj)
+            json.dump({rl: he.__dict__ for rl, he in head_ensembles.items()}, fp=outj)
