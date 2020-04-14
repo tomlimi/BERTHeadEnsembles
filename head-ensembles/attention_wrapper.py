@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 from itertools import chain
+from tqdm import tqdm
 
 
 class AttentionWrapper:
@@ -43,7 +44,7 @@ class AttentionWrapper:
 
 
         def preprocess_matrices(self, attention_loaded):
-            for sent_idx in self.sentence_idcs[:]:
+            for sent_idx in tqdm(self.sentence_idcs[:], desc="Preprocessing attention for sentences"):
                 if not self.check_subtokens(sent_idx, attention_loaded):
                     self.sentence_idcs.remove(sent_idx)
                     continue
@@ -86,7 +87,7 @@ class AttentionWrapper:
 
         def calc_metric_ensemble(self, metric, layer_idx, head_idx):
 
-            ensemble_matrices = [sent_matrices[head_idx, layer_idx, :,:].mean(axis=(0,1))
+            ensemble_matrices = [sent_matrices[layer_idx, head_idx, :,:].mean(axis=0)
                                  for sent_matrices in self.matrices]
 
             metric_res = metric.calculate(ensemble_matrices)

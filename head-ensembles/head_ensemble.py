@@ -23,7 +23,10 @@ class HeadEnsemble():
     def consider_candidate(self, candidate, metric, attn_wrapper):
 
         candidate_lid, candidate_hid = candidate
-        if len(self.ensemble) < self.MAX_ENSEMBLE_SIZE:
+        if not self.ensemble:
+            self.max_metric = attn_wrapper.calc_metric_ensemble(metric, [candidate_lid], [candidate_hid])
+            self.ensemble.append(candidate)
+        elif len(self.ensemble) < self.MAX_ENSEMBLE_SIZE:
             ensemble_lids, ensemble_hids = map(list, zip(*self.ensemble))
             candidate_metric = attn_wrapper.calc_metric_ensemble(metric, ensemble_lids + [candidate_lid],
                                                              ensemble_hids + [candidate_hid])
@@ -74,13 +77,13 @@ if __name__ == '__main__':
             else:
                 raise ValueError("Unknown metric! Available metrics: DepAcc")
             relation_label_directional = relation_label + '-' + direction
-            print(f"Finding Head Ensemble for label: {relation_label_directional}")
+            head_ensembles[relation_label] = HeadEnsemble(relation_label_directional)
+            print(f"Calculating metric for each head. Relation label: {relation_label_directional}")
             metric_grid = bert_attns.calc_metric_single(metric)
-            heads_ids = np.argsort(metric_grid, axis=None)[-HEADS_TO_CHECK:][::-1]
-
-            for candidate in tqdm(np.unravel_index(heads_ids, (12,12)),
-                                  desc=f"Finding ensemble for{relation_label_directional}"):
-                head_ensembles[relation_label_directional].consider_candidate(candidate)
+            heads_idcs = np.argsort(metric_grid, axis=None)[-HEADS_TO_CHECK:][::-1]
+            for candidate_id in tqdm(heads_idcs, desc=f"Candidates for ensemble!"):
+                candidate = np.unravel_index(candidate_id, metric_grid.shape)
+                head_ensembles[relation_label_directional].consider_candidate(candidate, metric, bert_attns)
 
     if args.json:
         with open(args.json, 'w') as outj:
