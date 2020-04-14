@@ -58,7 +58,7 @@ class Dependency():
         return label
 
     def read_conllu(self, conll_file_path):
-        sentence_relations = []
+        sentence_relations = defaultdict(list)
         sentence_tokens = []
 
         with open(conll_file_path, 'r') as in_conllu:
@@ -82,7 +82,6 @@ class Dependency():
                         if head_id != 0:
                             sentence_relations[label].append((dep_id, head_id))
                             sentence_relations[self.LABEL_ALL].append((dep_id, head_id))
-                            sentence_relations.append((dep_id, head_id, label, pos_tag))
 
                         sentence_tokens.append(fields[self.CONLLU_ORTH])
 
@@ -96,7 +95,7 @@ class Dependency():
         '''
 
         with open(wordpieces_file, 'r') as in_file:
-            wordpieces = [wp_sentence.strip() for wp_sentence in in_file.readlines()]
+            wordpieces = [wp_sentence.strip().split() for wp_sentence in in_file.readlines()]
 
         grouped_ids_all = []
         tokens_out_all = []
@@ -123,7 +122,6 @@ class Dependency():
                 assert conllu_id == len(conllu_tokens), f'{idx} \n' \
                                                         f'bert count {conllu_id} tokens{tokens_out} \n' \
                                                         f'conllu count {len(conllu_tokens)}, tokens {conllu_tokens}'
-                assert tokens_out == self.tokens[idx]
             except AssertionError:
                 self.wordpieces2tokens.append(None)
             else:

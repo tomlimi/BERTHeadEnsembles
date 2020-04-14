@@ -63,19 +63,18 @@ if __name__ == '__main__':
     args = ap.parse_args()
 
     dependency_tree = Dependency(args.conll, args.tokens)
-    bert_attns = AttentionWrapper(args.attentions, dependency_tree)
+    bert_attns = AttentionWrapper(args.attentions, dependency_tree.wordpieces2tokens)
 
     metric = None
     head_ensembles = dict()
     for direction in ['d2p', 'p2d']:
-        for relation_label in dependency_tree.label_map.keys:
+        for relation_label in dependency_tree.label_map.keys():
             if args.metric.lower() == "depacc":
                 metric = DepAcc(dependency_tree.relations, relation_label, dependent2parent=(direction=='d2p'))
             else:
                 raise ValueError("Unknown metric! Available metrics: DepAcc")
-            print(f"Finding Head Ensemble for label: {relation_label}")
             relation_label_directional = relation_label + '-' + direction
-
+            print(f"Finding Head Ensemble for label: {relation_label_directional}")
             metric_grid = bert_attns.calc_metric_single(metric)
             heads_ids = np.argsort(metric_grid, axis=None)[-HEADS_TO_CHECK:][::-1]
 
