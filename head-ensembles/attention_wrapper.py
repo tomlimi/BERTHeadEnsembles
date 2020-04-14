@@ -55,26 +55,26 @@ class AttentionWrapper:
                 # the max trick -- for each row subtract its max
                 # from all of its components to get the values into (-inf, 0]
                 if not self.NO_SOFTMAX:
-                    sent_matrices = sent_matrices - np.max(sent_matrices, axis=4, keepdims=True)
+                    sent_matrices = sent_matrices - np.max(sent_matrices, axis=3, keepdims=True)
                     exp_matrix = np.exp(sent_matrices)
-                    sent_matrices = exp_matrix / np.sum(exp_matrix, axis=4, keepdims=True)
+                    sent_matrices = exp_matrix / np.sum(exp_matrix, axis=3, keepdims=True)
                 else:
-                    sent_matrices = sent_matrices / np.sum(sent_matrices, axis=4, keepdims=True)
+                    sent_matrices = sent_matrices / np.sum(sent_matrices, axis=3, keepdims=True)
                 sent_matrices = self.aggregate_subtoken_matrices(sent_matrices, self.tokens_grouped[sent_idx])
                 self.matrices.append(sent_matrices)
 
 
         def aggregate_subtoken_matrices(self, attention_matrices, tokens_grouped):
             # this functions connects subtokens and aggregates their attention.
-            midres_matrices = np.zeros((self.layer_count, self.head_count, len(tokens_grouped), attention_matrices.shape[4]))
+            midres_matrices = np.zeros((self.layer_count, self.head_count, len(tokens_grouped), attention_matrices.shape[3]))
 
             for tok_id, wp_ids in enumerate(tokens_grouped):
-                midres_matrices[tok_id, :] = np.mean(attention_matrices[:,:,wp_ids, :], axis=3)
+                midres_matrices[tok_id, :] = np.mean(attention_matrices[:,:,wp_ids, :], axis=2)
 
             res_matrices= np.zeros((self.layer_count, self.head_count, len(tokens_grouped), len(tokens_grouped)))
 
             for tok_id, wp_ids in enumerate(tokens_grouped):
-                res_matrices[:, tok_id] = np.sum(midres_matrices[:, :, :, wp_ids], axis=4)
+                res_matrices[:, tok_id] = np.sum(midres_matrices[:, :, :, wp_ids], axis=3)
 
             return res_matrices
 
