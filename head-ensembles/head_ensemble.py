@@ -13,6 +13,7 @@ HEADS_TO_CHECK = 25
 
 class HeadEnsemble():
     MAX_ENSEMBLE_SIZE = 4
+
     def __init__(self, relation_label):
         self.ensemble = list()
         self.max_metric = 0.
@@ -21,7 +22,6 @@ class HeadEnsemble():
         self.relation_label = relation_label
 
     def consider_candidate(self, candidate, metric, attn_wrapper):
-
         candidate_lid, candidate_hid = candidate
         if not self.ensemble:
             self.max_metric = attn_wrapper.calc_metric_ensemble(metric, [candidate_lid], [candidate_hid])
@@ -29,7 +29,7 @@ class HeadEnsemble():
         elif len(self.ensemble) < self.MAX_ENSEMBLE_SIZE:
             ensemble_lids, ensemble_hids = map(list, zip(*self.ensemble))
             candidate_metric = attn_wrapper.calc_metric_ensemble(metric, ensemble_lids + [candidate_lid],
-                                                             ensemble_hids + [candidate_hid])
+                                                                 ensemble_hids + [candidate_hid])
             if candidate_metric > self.max_metric:
                 self.max_metric = candidate_metric
                 self.ensemble.append(candidate)
@@ -49,6 +49,7 @@ class HeadEnsemble():
                 self.ensemble[opt_substitute_idx] = candidate
                 self.max_metric = max_candidate_metric
         self.metric_history.append(self.max_metric)
+
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
@@ -71,13 +72,13 @@ if __name__ == '__main__':
     metric = None
     head_ensembles = dict()
     for direction in ['d2p', 'p2d']:
-        for relation_label in dependency_tree.label_map.keys():
+        for relation_label in list(dependency_tree.label_map.values()) + [Dependency.LABEL_OTHER, Dependency.LABEL_ALL]:
             if args.metric.lower() == "depacc":
                 metric = DepAcc(dependency_tree.relations, relation_label, dependent2parent=(direction=='d2p'))
             else:
                 raise ValueError("Unknown metric! Available metrics: DepAcc")
             relation_label_directional = relation_label + '-' + direction
-            head_ensembles[relation_label] = HeadEnsemble(relation_label_directional)
+            head_ensembles[relation_label_directional] = HeadEnsemble(relation_label_directional)
             print(f"Calculating metric for each head. Relation label: {relation_label_directional}")
             metric_grid = bert_attns.calc_metric_single(metric)
             heads_idcs = np.argsort(metric_grid, axis=None)[-HEADS_TO_CHECK:][::-1]

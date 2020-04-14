@@ -23,6 +23,21 @@ class AttentionWrapper:
 
             self.preprocess_matrices(attention_loaded)
 
+        def calc_metric_single(self, metric):
+            metric_res = np.array([[
+                metric.calculate([np.squeeze(sent_matrices[l,h,:,:]) for sent_matrices in self.matrices])
+                for h in range(self.head_count)] for l in range(self.layer_count)])
+            return metric_res
+
+        def calc_metric_ensemble(self, metric, layer_idx, head_idx):
+            ensemble_matrices = [sent_matrices[layer_idx, head_idx, :,:].mean(axis=0)
+                                 for sent_matrices in self.matrices]
+            metric_res = metric.calculate(ensemble_matrices)
+            return metric_res
+
+        def __getitem__(self, idx):
+            return self.sentence_idcs[idx], self.matrices[idx]
+
         def check_wordpieces(self, item, attention_loaded):
             matrix_id = 'arr_' + str(item)
             attention_rank = attention_loaded[matrix_id].shape[2] - int(self.WITH_EOS)
@@ -41,6 +56,20 @@ class AttentionWrapper:
                 print('Too long sentence, skipped', item, file=sys.stderr)
                 return False
             return True
+
+        def aggregate_wordpiece_matrices(self, attention_matrices, tokens_grouped):
+            # this functions connects wordpieces and aggregates their attention.
+            midres_matrices = np.zeros((self.layer_count, self.head_count, len(tokens_grouped), attention_matrices.shape[3]))
+
+            for tok_id, wp_ids in enumerate(tokens_grouped):
+                midres_matrices[:,:,tok_id, :] = np.mean(attention_matrices[:,:,wp_ids, :], axis=2)
+
+            res_matrices= np.zeros((self.layer_count, self.head_count, len(tokens_grouped), len(tokens_grouped)))
+
+            for tok_id, wp_ids in enumerate(tokens_grouped):
+                res_matrices[:,:, tok_id] = np.sum(midres_matrices[:, :, :, wp_ids], axis=3)
+
+            return res_matrices
 
         def preprocess_matrices(self, attention_loaded):
             for sent_idx in tqdm(self.sentence_idcs[:], desc="Preprocessing attention for sentences"):
@@ -62,32 +91,3 @@ class AttentionWrapper:
                     sent_matrices = sent_matrices / np.sum(sent_matrices, axis=3, keepdims=True)
                 sent_matrices = self.aggregate_wordpiece_matrices(sent_matrices, self.tokens_grouped[sent_idx])
                 self.matrices.append(sent_matrices)
-
-        def aggregate_wordpiece_matrices(self, attention_matrices, tokens_grouped):
-            # this functions connects wordpieces and aggregates their attention.
-            midres_matrices = np.zeros((self.layer_count, self.head_count, len(tokens_grouped), attention_matrices.shape[3]))
-
-            for tok_id, wp_ids in enumerate(tokens_grouped):
-                midres_matrices[:,:,tok_id, :] = np.mean(attention_matrices[:,:,wp_ids, :], axis=2)
-
-            res_matrices= np.zeros((self.layer_count, self.head_count, len(tokens_grouped), len(tokens_grouped)))
-
-            for tok_id, wp_ids in enumerate(tokens_grouped):
-                res_matrices[:,:, tok_id] = np.sum(midres_matrices[:, :, :, wp_ids], axis=3)
-
-            return res_matrices
-
-        def calc_metric_single(self, metric):
-            metric_res = np.array([[
-                metric.calculate([np.squeeze(sent_matrices[l,h,:,:]) for sent_matrices in self.matrices])
-                for h in range(self.head_count)] for l in range(self.layer_count)])
-            return metric_res
-
-        def calc_metric_ensemble(self, metric, layer_idx, head_idx):
-            ensemble_matrices = [sent_matrices[layer_idx, head_idx, :,:].mean(axis=0)
-                                 for sent_matrices in self.matrices]
-            metric_res = metric.calculate(ensemble_matrices)
-            return metric_res
-
-        def __getitem__(self, idx):
-            return self.sentence_idcs[idx], self.matrices[idx]
