@@ -18,21 +18,20 @@ class HeadEnsemble():
         self.ensemble = list()
         self.max_metric = 0.
         self.metric_history = list()
-
         self.relation_label = relation_label
 
     def consider_candidate(self, candidate, metric, attn_wrapper):
         candidate_lid, candidate_hid = candidate
         if not self.ensemble:
-            self.max_metric = attn_wrapper.calc_metric_ensemble(metric, [candidate_lid], [candidate_hid])
-            self.ensemble.append(candidate)
+            self.max_metric = float(attn_wrapper.calc_metric_ensemble(metric, [candidate_lid], [candidate_hid]))
+            self.ensemble.append(tuple(map(int,candidate)))
         elif len(self.ensemble) < self.MAX_ENSEMBLE_SIZE:
             ensemble_lids, ensemble_hids = map(list, zip(*self.ensemble))
-            candidate_metric = attn_wrapper.calc_metric_ensemble(metric, ensemble_lids + [candidate_lid],
-                                                                 ensemble_hids + [candidate_hid])
+            candidate_metric = float(attn_wrapper.calc_metric_ensemble(metric, ensemble_lids + [candidate_lid],
+                                                                 ensemble_hids + [candidate_hid]))
             if candidate_metric > self.max_metric:
                 self.max_metric = candidate_metric
-                self.ensemble.append(candidate)
+                self.ensemble.append(tuple(map(int,candidate)))
         else:
             max_candidate_metric = 0.
             opt_substitute_idx = None
@@ -40,13 +39,13 @@ class HeadEnsemble():
                 ensemble_lids, ensemble_hids = map(list, zip(*self.ensemble))
                 ensemble_lids[substitute_idx] = candidate_lid
                 ensemble_hids[substitute_idx] = candidate_hid
-                candidate_metric = attn_wrapper.calc_metric_ensemble(metric, ensemble_lids, ensemble_hids)
+                candidate_metric = float(attn_wrapper.calc_metric_ensemble(metric, ensemble_lids, ensemble_hids))
                 if candidate_metric > self.max_metric and candidate_metric > max_candidate_metric:
                     max_candidate_metric = candidate_metric
                     opt_substitute_idx = substitute_idx
 
             if opt_substitute_idx is not None:
-                self.ensemble[opt_substitute_idx] = candidate
+                self.ensemble[opt_substitute_idx] = tuple(map(int,candidate))
                 self.max_metric = max_candidate_metric
         self.metric_history.append(self.max_metric)
 
@@ -72,7 +71,7 @@ if __name__ == '__main__':
     metric = None
     head_ensembles = dict()
     for direction in ['d2p', 'p2d']:
-        for relation_label in list(dependency_tree.label_map.values()) + [Dependency.LABEL_OTHER, Dependency.LABEL_ALL]:
+        for relation_label in list(set(dependency_tree.label_map.values())) + [Dependency.LABEL_OTHER, Dependency.LABEL_ALL]:
             if args.metric.lower() == "depacc":
                 metric = DepAcc(dependency_tree.relations, relation_label, dependent2parent=(direction=='d2p'))
             else:
