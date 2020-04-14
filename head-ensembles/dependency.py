@@ -1,8 +1,6 @@
 from collections import defaultdict
 
 from unidecode import unidecode
-import pandas as pd
-
 
 class Dependency():
 

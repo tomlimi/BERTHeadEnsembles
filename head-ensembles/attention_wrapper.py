@@ -1,7 +1,6 @@
 import numpy as np
 import sys
 from itertools import chain
-from tqdm import tqdm
 
 
 class AttentionWrapper:
@@ -83,7 +82,7 @@ class AttentionWrapper:
                      for h in range(self.head_count)] for l in range(self.layer_count)]
 
         metric_res = np.array([[metric.calculate(matrices[l][h]) for h in range(self.head_count)]
-                                  for l in raŻnge(self.layer_count)])
+                                  for l in range(self.layer_count)])
         return metric_res
 
     def calc_metric_ensemble(self, metric, layer_idx, head_idx, selected_sentences=None):
@@ -100,7 +99,7 @@ class AttentionWrapper:
         if not self.check_subtokens(item):
             return None
         for layer_id in range(self.layer_count):
-            layer_matrices = [self.get_head(item, layer_id, head_id, tokens_checked=True) for
+            layer_matrices = [self.get_matrix(item, layer_id, head_id, tokens_checked=True) for
                               head_id in range(self.head_count)]
             matrices.append(layer_matrices)
 

@@ -1,9 +1,10 @@
 import argparse
 import numpy as np
 import json
+from tqdm import tqdm
 
 from dependency import Dependency
-from atttention_wrapper import AttentionWrapper
+from attention_wrapper import AttentionWrapper
 from metrics import DepAcc
 
 
@@ -61,7 +62,7 @@ if __name__ == '__main__':
 
     args = ap.parse_args()
 
-    dependency_tree = Dependency(args.conll)
+    dependency_tree = Dependency(args.conll, args.tokens)
     bert_attns = AttentionWrapper(args.attentions, dependency_tree)
 
     metric = None
@@ -75,11 +76,11 @@ if __name__ == '__main__':
             print(f"Finding Head Ensemble for label: {relation_label}")
             relation_label_directional = relation_label + '-' + direction
 
-
-            metric_grid = bert_attns.calc_metric_all_heads(metric)
+            metric_grid = bert_attns.calc_metric_single(metric)
             heads_ids = np.argsort(metric_grid, axis=None)[-HEADS_TO_CHECK:][::-1]
 
-            for candidate in np.unravel_index(heads_ids, (12,12)):
+            for candidate in tqdm(np.unravel_index(heads_ids, (12,12)),
+                                  desc=f"Finding ensemble for{relation_label_directional}"):
                 head_ensembles[relation_label_directional].consider_candidate(candidate)
 
     if args.json:
