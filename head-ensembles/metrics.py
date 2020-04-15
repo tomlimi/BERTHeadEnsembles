@@ -40,4 +40,28 @@ class DepAcc(Metric):
             return 0
 
         return retrieved / total
+    
+    
+class UAS(Metric):
+	def __init__(self, unlabeld_dependency_relations, roots):
+		self.unlabeled_dependency_relations = unlabeld_dependency_relations
+	
+	def calculate(self, sent_idcs, matrices):
+		results =[]
+		for index, matrix in zip(sent_idcs, matrices):
+			if matrix is not None:
+				np.fill_diagonal(matrix, 0.)
+				max_row = matrix.argmax(axis=1)
+				
+				rel_pairs = self.unlabeled_dependency_relations[index]
+
+				correct = sum([max_row[attending] == attended for attending, attended in rel_pairs])
+				results.append(correct+1/len(rel_pairs)+1)  # +1 in denominator and numerator because we use gold root
+		
+		return np.array(results).mean()
+
+
+class LAS(Metric):
+	pass
+
 

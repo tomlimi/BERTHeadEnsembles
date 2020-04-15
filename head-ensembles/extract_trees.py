@@ -13,7 +13,6 @@ RelData = namedtuple('RelData','layers heads transpose d2p')
 
 
 
-
 # soft pos mask (BEST)
 # relation_rules  = {'adj-clause-p2d': RelData([3, 4, 7, 6, 5, 7], [3, 5, 6, 6, 9, 10],False, False),
 #     'adj-modifier-d2p': RelData([3, 7, 4, 5], [9, 2, 5, 0],False, True),
@@ -190,7 +189,8 @@ def rewrite_conllu(conllu_file, conllu_out_pred, conllu_out_gold, break_after=10
 	print("length uas corr coef:")
 	print(np.corrcoef(np.array(uas), np.array(lengths)))
 
-def multigraph_aborescene(sentence_index):
+
+def multigraph_aborescene(sentence_index, dependency):
 	matrices, sentence_id = next(attention_gen)
 
 	assert sentence_index == sentence_id
@@ -205,15 +205,14 @@ def multigraph_aborescene(sentence_index):
 			root_ord = d
 			break
 	
-	token2pos = {d: p for d, h, l, p in dependency_rels[sentence_index]}
+
 	DG = nx.DiGraph()
 	DG.add_edges_from(edge_labeled.keys())
 	
 	labels = {}
 	for node in DG.nodes():
 		labels[node] = words_list[node]
-	posG = nx.spring_layout(DG)
-	
+
 	MultiAttention = nx.MultiDiGraph()
 	MultiAttention.add_nodes_from(DG.nodes())
 	
@@ -226,13 +225,7 @@ def multigraph_aborescene(sentence_index):
 		aggr_matrix[:, root_ord] = 0.001
 		np.fill_diagonal(aggr_matrix, 0.001)
 		aggr_matrix = np.log(aggr_matrix/(1-aggr_matrix))
-		# for i in range(len(aggr_matrix)):
-		# 	for j in range(len(aggr_matrix)):
-		# 		if i != j:
-		# 			if relation in pos_frame:
-		# 				aggr_matrix[i, j] *= pos_frame[relation][(token2pos[j], token2pos[i])]
-		# 			else:
-		# 				aggr_matrix[i, j] *= 0
+
 		
 		AG = nx.from_numpy_matrix(aggr_matrix, create_using=nx.DiGraph)
 		

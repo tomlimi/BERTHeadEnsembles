@@ -44,6 +44,7 @@ class Dependency():
 
         self.tokens = []
         self.relations = []
+        self.roots = []
         self.wordpieces2tokens = []
 
         self.read_conllu(conll_file)
@@ -57,6 +58,14 @@ class Dependency():
         else:
             label = cls.LABEL_OTHER
         return label
+    
+    @property
+    def labeled_relations(self):
+        return [[(rel[0], rel[1], label) for label, rel in sent_relations.items()] for sent_relations in self.relations]
+    
+    @property
+    def unlabeled_relations(self):
+        return [[rel for rel in sent_relations[self.LABEL_ALL]] for sent_relations in self.relations]
 
     def read_conllu(self, conll_file_path):
         sentence_relations = defaultdict(list)
@@ -83,6 +92,8 @@ class Dependency():
                         if head_id != 0:
                             sentence_relations[label].append((dep_id, head_id))
                             sentence_relations[self.LABEL_ALL].append((dep_id, head_id))
+                        else:
+                            self.roots.append(int(fields[self.CONLLU_ID]) -1)
 
                         sentence_tokens.append(fields[self.CONLLU_ORTH])
 
