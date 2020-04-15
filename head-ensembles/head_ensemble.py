@@ -66,7 +66,7 @@ if __name__ == '__main__':
     args = ap.parse_args()
 
     dependency_tree = Dependency(args.conll, args.tokens)
-    bert_attns = AttentionWrapper(args.attentions, dependency_tree.wordpieces2tokens)
+    bert_attns = AttentionWrapper(args.attentions, dependency_tree.wordpieces2tokens, args.sentences)
 
     metric = None
     head_ensembles = dict()

@@ -21,19 +21,19 @@ class DepAcc(Metric):
         self.relation_label = relation_label
         self.dependent2parent = dependent2parent
 
-    def calculate(self, matrices):
+    def calculate(self, sent_idcs, matrices):
         retrieved = 0
         total = 0
 
-        for index, matrix in enumerate(matrices):
+        for index, matrix in zip(sent_idcs, matrices):
             if matrix is not None:
                 np.fill_diagonal(matrix, 0.)
-                matrix = (matrix == matrix.max(axis=1, keepdims=True)).astype(int)
+                max_row = matrix.argmax(axis=1)
 
                 rel_pairs = self.dependency_relations[index]
                 if not self.dependent2parent:
                     rel_pairs = list(map(tuple, map(reversed, rel_pairs)))
-                retrieved += np.sum(matrix[tuple(zip(*rel_pairs))])
+                retrieved += sum([max_row[attending] == attended for attending, attended in rel_pairs ])
                 total += len(rel_pairs)
 
         if total == 0:

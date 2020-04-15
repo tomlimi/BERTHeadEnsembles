@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from unidecode import unidecode
 
+
 class Dependency():
 
     pos_labels = ('ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM',
