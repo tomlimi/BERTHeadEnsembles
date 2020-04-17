@@ -88,14 +88,17 @@ class Dependency():
                         head_id = int(fields[self.CONLLU_HEAD]) -1
                         dep_id = int(fields[self.CONLLU_ID]) -1
                         label = self.transform_label(fields[self.CONLLU_LABEL])
-                        pos_tag = fields[self.CONLLU_POS]
-                        if head_id != 0:
-                            sentence_relations[label].append((dep_id, head_id))
-                            sentence_relations[self.LABEL_ALL].append((dep_id, head_id))
-                        else:
+
+                        sentence_relations[label].append((dep_id, head_id))
+                        sentence_relations[self.LABEL_ALL].append((dep_id, head_id))
+                        if head_id < 0:
                             self.roots.append(int(fields[self.CONLLU_ID]) -1)
 
                         sentence_tokens.append(fields[self.CONLLU_ORTH])
+                    else:
+                        print(fields[self.CONLLU_ID])
+
+                        
 
     def group_wordpieces(self, wordpieces_file):
         '''
