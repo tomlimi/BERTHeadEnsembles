@@ -61,7 +61,8 @@ class Dependency():
     
     @property
     def labeled_relations(self):
-        return [[(rel[0], rel[1], label) for label, rel in sent_relations.items()] for sent_relations in self.relations]
+        return [[(rel[0], rel[1], label) for label, rel in sent_relations.items()] + [(root, -1, 'root')]
+                for root, sent_relations in zip(self.roots, self.relations)]
     
     @property
     def unlabeled_relations(self):

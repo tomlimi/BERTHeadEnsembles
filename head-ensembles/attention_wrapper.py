@@ -2,6 +2,7 @@ import numpy as np
 import sys
 from itertools import chain
 from tqdm import tqdm
+from multiprocessing import Pool
 
 import networkx as nx
 from networkx.algorithms import tree
@@ -37,35 +38,39 @@ class AttentionWrapper:
 		metric_res = metric.calculate(self.sentence_idcs, ensemble_matrices)
 		return metric_res
 	
-	def extract_graph(self, idx, relation_heads, relation_directions, root):
-		
-		dependency_graph = nx.MultiDiGraph()
-		dependency_graph.add_nodes_from(range(len(self.tokens_grouped[idx])))
-		
-		edge2relation_label = dict()
-		for relation, head_idcs in relation_heads.items():
-			layer_idx, head_idx = zip(head_idcs)
-			ensemble_matrix = self.matrices[idx][layer_idx, head_idx,:,:].mean(axis=0)
+	def extract_trees(self, relation_heads, relation_directions, roots):
+		extracted_unlabeled = list()
+		extracted_labeled = list()
+		for idx, sent_idx in tqdm(enumerate(self.sentence_idcs), desc= 'Extracting trees from matrices'):
+			root = roots[sent_idx]
 			
-			if relation_directions[relation] == 'd2p':
-				ensemble_matrix  = ensemble_matrix .transpose()
-			ensemble_matrix [:, root] = 0.001
-			np.fill_diagonal(ensemble_matrix, 0.001)
-			ensemble_matrix = np.log(ensemble_matrix / (1 - ensemble_matrix))
+			dependency_graph = nx.MultiDiGraph()
+			dependency_graph.add_nodes_from(range(len(self.tokens_grouped[idx])))
 			
-			ensemble_graph = nx.from_numpy_matrix(ensemble_matrix, create_using=nx.DiGraph)
+			edge2relation_label = dict()
+			for relation, head_idcs in relation_heads.items():
+				layer_idx, head_idx = zip(*head_idcs)
+				ensemble_matrix = self.matrices[idx][layer_idx, head_idx,:,:].mean(axis=0)
+				
+				if relation_directions[relation] == 'd2p':
+					ensemble_matrix = ensemble_matrix .transpose()
+				ensemble_matrix[:, root] = 0.001
+				np.fill_diagonal(ensemble_matrix, 0.001)
+				ensemble_matrix = np.log(ensemble_matrix / (1 - ensemble_matrix))
+				
+				ensemble_graph = nx.from_numpy_matrix(ensemble_matrix, create_using=nx.DiGraph)
+				
+				# Unfortunately this is necessary, because netwokx multigraph loses information about edges
+				for u, v, d in ensemble_graph .edges(data=True):
+					edge2relation_label[(u, v, d['weight'])] = relation
+				
+				dependency_graph.add_edges_from(ensemble_graph.edges(data=True), label=relation)
 			
-			# Unfortunately this is necessary, because netwokx multigraph loses information about edges
-			for u, v, d in ensemble_graph .edges(data=True):
-				edge2relation_label[(u, v, d['weight'])] = relation
+			dependency_aborescene = tree.branchings.maximum_spanning_arborescence(dependency_graph)
 			
-			dependency_graph.add_edges_from(ensemble_graph.edges(data=True), label=relation)
-		
-		dependency_aborescene = tree.branchings.maximum_spanning_arborescence(dependency_graph)
-		
-		extracted_unlabeled = list(dependency_aborescene.edges(data=False))
-		extracted_labeled = [(dep, head, edge2relation_label[(dep, head, edge_data['weight'])])
-		                     for dep, head, edge_data in dependency_aborescene.edges(data=True)]
+			extracted_unlabeled.append(list(dependency_aborescene.edges(data=False)) + [(root, -1)])
+			extracted_labeled.append([(dep, head, edge2relation_label[(dep, head, edge_data['weight'])])
+			                          for dep, head, edge_data in dependency_aborescene.edges(data=True)] + [(root, -1, 'root')])
 		
 		return extracted_unlabeled, extracted_labeled
 		
