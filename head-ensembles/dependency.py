@@ -95,8 +95,6 @@ class Dependency():
                             self.roots.append(int(fields[self.CONLLU_ID]) -1)
 
                         sentence_tokens.append(fields[self.CONLLU_ORTH])
-                    else:
-                        print(fields[self.CONLLU_ID])
 
                         
 
