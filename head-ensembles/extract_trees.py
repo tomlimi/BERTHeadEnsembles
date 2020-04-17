@@ -45,7 +45,7 @@ if __name__ == '__main__':
 				selected_directions[relation] = 'd2p'
 		
 	bert_attns = AttentionWrapper(args.attentions, dependency_tree.wordpieces2tokens, args.sentences)
-	extracted_labeled, extracted_unlabeled = bert_attns.extract_trees(selected_head_ensembles, selected_directions, dependency_tree.roots)
+	extracted_unlabeled, extracted_labeled = bert_attns.extract_trees(selected_head_ensembles, selected_directions, dependency_tree.roots)
 	
 	uas_m = UAS(dependency_tree.unlabeled_relations)
 	
