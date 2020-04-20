@@ -2,11 +2,9 @@ import numpy as np
 import argparse
 import json
 
-
 from dependency import Dependency
 from metrics import UAS
 from attention_wrapper import AttentionWrapper
-
 
 DEPACC_THRESHOLD = 0.6
 
@@ -24,28 +22,26 @@ if __name__ == '__main__':
 	args = ap.parse_args()
 	
 	dependency_tree = Dependency(args.conll, args.tokens)
-
 	
 	head_ensembles = dict()
-	selected_head_ensembles = dict()
-	selected_directions = dict()
+	ensembles_d2p = dict()
+	ensembles_p2d = dict()
+	depacc_d2p = dict()
+	depacc_p2d = dict()
 	
 	with open(args.json, 'r') as inj:
 		head_ensembles = json.load(inj)
 	
-	for relation in set(dependency_tree.label_map.values()):
-		if head_ensembles[relation + '-p2d']['max_metric'] > head_ensembles[relation + '-d2p']['max_metric']:
-			if head_ensembles[relation + '-p2d']['max_metric'] > DEPACC_THRESHOLD:
-				selected_head_ensembles[relation] = head_ensembles[relation + '-p2d']['ensemble']
-				print(selected_head_ensembles[relation] )
-				selected_directions[relation] = 'p2d'
-		else:
-			if head_ensembles[relation + '-d2p']['max_metric'] > DEPACC_THRESHOLD:
-				selected_head_ensembles[relation] = head_ensembles[relation + '-d2p']['ensemble']
-				selected_directions[relation] = 'd2p'
+	considered_relations = ('adj-modifier', 'adv-modifier', 'auxiliary', 'compound', 'conjunct', 'determiner',
+	                        'noun-modifier', 'num-modifier', 'object', 'other', 'subject', 'cc', 'case', 'mark')
+	for relation in considered_relations:
+		ensembles_d2p[relation] = head_ensembles[relation + '-d2p']['ensemble']
+		depacc_d2p[relation] = head_ensembles[relation + '-d2p']['max_metric']
+		ensembles_p2d[relation] = head_ensembles[relation + '-p2d']['ensemble']
+		depacc_p2d[relation] = head_ensembles[relation + '-p2d']['max_metric']
 		
 	bert_attns = AttentionWrapper(args.attentions, dependency_tree.wordpieces2tokens, args.sentences)
-	extracted_unlabeled, extracted_labeled = bert_attns.extract_trees(selected_head_ensembles, selected_directions, dependency_tree.roots)
+	extracted_unlabeled, extracted_labeled = bert_attns.extract_trees(ensembles_d2p, ensembles_p2d, depacc_d2p, depacc_p2d, dependency_tree.roots)
 	
 	uas_m = UAS(dependency_tree.unlabeled_relations)
 	
