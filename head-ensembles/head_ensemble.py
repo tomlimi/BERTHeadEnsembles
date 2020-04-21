@@ -73,7 +73,7 @@ if __name__ == '__main__':
     for direction in ['d2p', 'p2d']:
         for relation_label in list(set(dependency_tree.label_map.values())) + [Dependency.LABEL_OTHER, Dependency.LABEL_ALL]:
             if args.metric.lower() == "depacc":
-                metric = DepAcc(dependency_tree.relations, relation_label, dependent2parent=(direction=='d2p'))
+                metric = DepAcc(dependency_tree, relation_label, dependent2parent=(direction=='d2p'))
             else:
                 raise ValueError("Unknown metric! Available metrics: DepAcc")
             relation_label_directional = relation_label + '-' + direction

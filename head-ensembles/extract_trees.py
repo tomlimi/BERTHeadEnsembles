@@ -3,7 +3,7 @@ import argparse
 import json
 
 from dependency import Dependency
-from metrics import UAS
+from metrics import UAS, LAS
 from attention_wrapper import AttentionWrapper
 
 DEPACC_THRESHOLD = 0.6
@@ -33,7 +33,8 @@ if __name__ == '__main__':
 		head_ensembles = json.load(inj)
 	
 	considered_relations = ('adj-modifier', 'adv-modifier', 'auxiliary', 'compound', 'conjunct', 'determiner',
-	                        'noun-modifier', 'num-modifier', 'object', 'other', 'subject', 'cc', 'case', 'mark')
+							'noun-modifier', 'num-modifier', 'object', 'subject', 'cc', 'case', 'mark')
+
 	for relation in considered_relations:
 		ensembles_d2p[relation] = head_ensembles[relation + '-d2p']['ensemble']
 		depacc_d2p[relation] = head_ensembles[relation + '-d2p']['max_metric']
@@ -43,8 +44,10 @@ if __name__ == '__main__':
 	bert_attns = AttentionWrapper(args.attentions, dependency_tree.wordpieces2tokens, args.sentences)
 	extracted_unlabeled, extracted_labeled = bert_attns.extract_trees(ensembles_d2p, ensembles_p2d, depacc_d2p, depacc_p2d, dependency_tree.roots)
 	
-	uas_m = UAS(dependency_tree.unlabeled_relations)
+	uas_m = UAS(dependency_tree)
+	las_m = LAS(dependency_tree)
 	
-	uas_res = uas_m.calculate(bert_attns.sentence_idcs, extracted_unlabeled)
+	uas_res = uas_m(bert_attns.sentence_idcs, extracted_unlabeled).result()
+	las_res = las_m(bert_attns.sentence_idcs, extracted_labeled).result()
 
-	print(f"UAS result for extracted tree: {uas_res}")
+	print(f"UAS result for extracted tree: {uas_res}, LAS: {las_res}")

@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from unidecode import unidecode
 
@@ -8,28 +8,31 @@ class Dependency():
     pos_labels = ('ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM',
                   'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X')
 
-    label_map = {'acl': 'adj-clause',
-                 'advcl': 'adv-clause',
-                 'advmod': 'adv-modifier',
-                 'amod': 'adj-modifier',
-                 'appos': 'apposition',
-                 'aux': 'auxiliary',
-                 'xcomp': 'clausal',
-                 'parataxis': 'parataxis',
-                 'ccomp': 'clausal',
-                 'compound': 'compound',
-                 'conj': 'conjunct',
-                 'cc': 'cc',
-                 'csubj': 'clausal-subject',
-                 'det': 'determiner',
-                 'nmod': 'noun-modifier',
-                 'nsubj': 'subject',
-                 'nummod': 'num-modifier',
-                 'obj': 'object',
-                 'iobj': 'object',
-                 'punct': 'punctuation',
-                 'case': 'case',
-                 'mark': 'mark'}
+    label_map = OrderedDict({'acl': 'adj-clause',
+                             'advcl': 'adv-clause',
+                             'advmod': 'adv-modifier',
+                             'amod': 'adj-modifier',
+                             'appos': 'apposition',
+                             'aux': 'auxiliary',
+                             'xcomp': 'clausal',
+                             'ccomp': 'clausal',
+                             'parataxis': 'parataxis',
+                             'compound': 'compound',
+                             'conj': 'conjunct',
+                             'cc': 'cc',
+                             'csubj': 'clausal-subject',
+                             'det': 'determiner',
+                             'nmod': 'noun-modifier',
+                             'nsubj': 'subject',
+                             'nummod': 'num-modifier',
+                             'iobj': 'object',
+                             'obj': 'object',
+                             'punct': 'punctuation',
+                             'case': 'case',
+                             'mark': 'mark',
+                             'root': 'root'})
+
+    reverse_label_map = {v: k for k, v in label_map}
 
     LABEL_OTHER = 'other'
     LABEL_ALL = 'all'
@@ -44,6 +47,7 @@ class Dependency():
 
         self.tokens = []
         self.relations = []
+        self.original_relations = []
         self.roots = []
         self.wordpieces2tokens = []
 
@@ -52,6 +56,7 @@ class Dependency():
 
     @classmethod
     def transform_label(cls, label):
+        """Maps UD labels to labels specified in label_map. Returns 'other' for unknown labels"""
         label = label.split(':')[0]  # to cope with nsubj:pass for instance
         if label in cls.label_map:
             label = cls.label_map[label]
@@ -61,15 +66,18 @@ class Dependency():
     
     @property
     def labeled_relations(self):
-        return [[(rel[0], rel[1], label) for label, rel in sent_relations.items()] + [(root, -1, 'root')]
-                for root, sent_relations in zip(self.roots, self.relations)]
+        """Returns lists of tuples of dependent, its head and original UD relation label for each sentence."""
+        return [[(rel[0], rel[1], label.split(':')[0]) for label, rel in sent_relations.items()] + [(root, -1, 'root')]
+                for root, sent_relations in zip(self.roots, self.original_relations)]
     
     @property
     def unlabeled_relations(self):
+        """Returns lists of tuples of dependent and its head or each sentence."""
         return [[rel for rel in sent_relations[self.LABEL_ALL]] for sent_relations in self.relations]
 
     def read_conllu(self, conll_file_path):
         sentence_relations = defaultdict(list)
+        sentence_original_relations = defaultdict(list)
         sentence_tokens = []
 
         with open(conll_file_path, 'r') as in_conllu:
@@ -77,7 +85,9 @@ class Dependency():
             for line in in_conllu:
                 if line == '\n':
                     self.relations.append(sentence_relations)
+                    self.original_relations.append(sentence_originial_relations)
                     sentence_relations = defaultdict(list)
+                    sentence_original_relations = defaultdict(list)
                     self.tokens.append(sentence_tokens)
                     sentence_tokens = []
                     sentid += 1
@@ -86,12 +96,15 @@ class Dependency():
                 else:
                     fields = line.strip().split('\t')
                     if fields[self.CONLLU_ID].isdigit():
-                        head_id = int(fields[self.CONLLU_HEAD]) -1
-                        dep_id = int(fields[self.CONLLU_ID]) -1
-                        label = self.transform_label(fields[self.CONLLU_LABEL])
+                        head_id = int(fields[self.CONLLU_HEAD]) - 1
+                        dep_id = int(fields[self.CONLLU_ID]) - 1
+                        original_label = fields[self.CONLLU_LABEL]
+                        label = self.transform_label(original_label)
 
                         sentence_relations[label].append((dep_id, head_id))
                         sentence_relations[self.LABEL_ALL].append((dep_id, head_id))
+
+                        sentence_original_relations[original_label].append((dep_id, head_id))
                         if head_id < 0:
                             self.roots.append(int(fields[self.CONLLU_ID]) -1)
 
