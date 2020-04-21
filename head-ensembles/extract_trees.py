@@ -45,9 +45,11 @@ if __name__ == '__main__':
 	extracted_unlabeled, extracted_labeled = bert_attns.extract_trees(ensembles_d2p, ensembles_p2d, depacc_d2p, depacc_p2d, dependency_tree.roots)
 	
 	uas_m = UAS(dependency_tree)
+	uas_m(bert_attns.sentence_idcs, extracted_unlabeled)
+	uas_res = uas_m.result()
+
 	las_m = LAS(dependency_tree)
-	
-	uas_res = uas_m(bert_attns.sentence_idcs, extracted_unlabeled).result()
-	las_res = las_m(bert_attns.sentence_idcs, extracted_labeled).result()
+	las_m(bert_attns.sentence_idcs, extracted_labeled)
+	las_res = las_m.result()
 
 	print(f"UAS result for extracted tree: {uas_res}, LAS: {las_res}")
