@@ -47,7 +47,7 @@ class Dependency():
 
         self.tokens = []
         self.relations = []
-        self.original_relations = []
+        self.labeled_relations = []
         self.roots = []
         self.wordpieces2tokens = []
 
@@ -65,19 +65,13 @@ class Dependency():
         return label
     
     @property
-    def labeled_relations(self):
-        """Returns lists of tuples of dependent, its head and original UD relation label for each sentence."""
-        return [[(rel[0], rel[1], label.split(':')[0]) for label, rel in sent_relations.items()] + [(root, -1, 'root')]
-                for root, sent_relations in zip(self.roots, self.original_relations)]
-    
-    @property
     def unlabeled_relations(self):
         """Returns lists of tuples of dependent and its head or each sentence."""
         return [[rel for rel in sent_relations[self.LABEL_ALL]] for sent_relations in self.relations]
 
     def read_conllu(self, conll_file_path):
         sentence_relations = defaultdict(list)
-        sentence_original_relations = defaultdict(list)
+        sentence_labeled_relations = []
         sentence_tokens = []
 
         with open(conll_file_path, 'r') as in_conllu:
@@ -85,9 +79,9 @@ class Dependency():
             for line in in_conllu:
                 if line == '\n':
                     self.relations.append(sentence_relations)
-                    self.original_relations.append(sentence_original_relations)
                     sentence_relations = defaultdict(list)
-                    sentence_original_relations = defaultdict(list)
+                    self.labeled_relations.append(sentence_labeled_relations)
+                    sentence_labeled_relations = []
                     self.tokens.append(sentence_tokens)
                     sentence_tokens = []
                     sentid += 1
@@ -104,13 +98,11 @@ class Dependency():
                         sentence_relations[label].append((dep_id, head_id))
                         sentence_relations[self.LABEL_ALL].append((dep_id, head_id))
 
-                        sentence_original_relations[original_label].append((dep_id, head_id))
+                        sentence_labeled_relations.append((dep_id, head_id, original_label))
                         if head_id < 0:
                             self.roots.append(int(fields[self.CONLLU_ID]) -1)
 
                         sentence_tokens.append(fields[self.CONLLU_ORTH])
-
-                        
 
     def group_wordpieces(self, wordpieces_file):
         '''
