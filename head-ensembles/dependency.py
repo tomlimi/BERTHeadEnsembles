@@ -32,7 +32,7 @@ class Dependency():
                              'mark': 'mark',
                              'root': 'root'})
 
-    reverse_label_map = {v: k for k, v in label_map}
+    reverse_label_map = {v: k for k, v in label_map.items()}
 
     LABEL_OTHER = 'other'
     LABEL_ALL = 'all'
@@ -85,7 +85,7 @@ class Dependency():
             for line in in_conllu:
                 if line == '\n':
                     self.relations.append(sentence_relations)
-                    self.original_relations.append(sentence_originial_relations)
+                    self.original_relations.append(sentence_original_relations)
                     sentence_relations = defaultdict(list)
                     sentence_original_relations = defaultdict(list)
                     self.tokens.append(sentence_tokens)
