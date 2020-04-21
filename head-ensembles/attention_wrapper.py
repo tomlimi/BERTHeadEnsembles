@@ -27,16 +27,20 @@ class AttentionWrapper:
         self.preprocess_matrices(attention_loaded)
 
     def calc_metric_single(self, metric):
-        metric_res = np.array([[
-            metric(self.sentence_idcs, [np.squeeze(sent_matrices[l,h,:,:]) for sent_matrices in self.matrices]).reult()
-            for h in range(self.head_count)] for l in range(self.layer_count)])
+        metric_res = np.zeros((self.head_count, self.layer_count))
+        for h in range(self.head_count):
+            for l in range(self.layer_count):
+                metric.reset_state()
+                metric(self.sentence_idcs, [np.squeeze(sent_matrices[l,h,:,:]) for sent_matrices in self.matrices])
+                metric_res[h,l] = metric.result()
+
         return metric_res
 
     def calc_metric_ensemble(self, metric, layer_idx, head_idx):
-        ensemble_matrices = [sent_matrices[layer_idx, head_idx, :,:].mean(axis=0)
-                             for sent_matrices in self.matrices]
-        metric_res = metric(self.sentence_idcs, ensemble_matrices).result()
-        return metric_res
+        metric.reset_state()
+        metric(self.sentence_idcs,
+               [sent_matrices[layer_idx, head_idx, :,:].mean(axis=0) for sent_matrices in self.matrices])
+        return metric.result()
 
     def extract_trees(self, relation_heads_d2p, relation_heads_p2d, weights_d2p, weights_p2d, roots):
         extracted_unlabeled = list()
