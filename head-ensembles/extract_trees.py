@@ -21,7 +21,7 @@ if __name__ == '__main__':
 	
 	args = ap.parse_args()
 	
-	dependency_tree = Dependency(args.conll, args.tokens)
+	dependency = Dependency(args.conll, args.tokens)
 	
 	head_ensembles = dict()
 	ensembles_d2p = dict()
@@ -32,8 +32,10 @@ if __name__ == '__main__':
 	with open(args.json, 'r') as inj:
 		head_ensembles = json.load(inj)
 	
+	# considered_relations = (Dependency.LABEL_ALL,)
+	
 	considered_relations = ('adj-modifier', 'adv-modifier', 'auxiliary', 'compound', 'conjunct', 'determiner',
-							'noun-modifier', 'num-modifier', 'object', 'subject', 'cc', 'case', 'mark')
+							'noun-modifier', 'num-modifier', 'object', 'other', 'subject', 'cc', 'case', 'mark')
 
 	for relation in considered_relations:
 		ensembles_d2p[relation] = head_ensembles[relation + '-d2p']['ensemble']
@@ -41,14 +43,14 @@ if __name__ == '__main__':
 		ensembles_p2d[relation] = head_ensembles[relation + '-p2d']['ensemble']
 		depacc_p2d[relation] = head_ensembles[relation + '-p2d']['max_metric']
 		
-	bert_attns = AttentionWrapper(args.attentions, dependency_tree.wordpieces2tokens, args.sentences)
-	extracted_unlabeled, extracted_labeled = bert_attns.extract_trees(ensembles_d2p, ensembles_p2d, depacc_d2p, depacc_p2d, dependency_tree.roots)
+	bert_attns = AttentionWrapper(args.attentions, dependency.wordpieces2tokens, args.sentences)
+	extracted_unlabeled, extracted_labeled = bert_attns.extract_trees(ensembles_d2p, ensembles_p2d, depacc_d2p, depacc_p2d, dependency.roots)
 	
-	uas_m = UAS(dependency_tree)
+	uas_m = UAS(dependency)
 	uas_m(bert_attns.sentence_idcs, extracted_unlabeled)
 	uas_res = uas_m.result()
 
-	las_m = LAS(dependency_tree)
+	las_m = LAS(dependency)
 	las_m(bert_attns.sentence_idcs, extracted_labeled)
 	las_res = las_m.result()
 

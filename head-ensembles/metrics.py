@@ -109,7 +109,7 @@ class LAS(Metric):
         if sent_predicted_relations is not None:
             rel_pairs = self.dependency.labeled_relations[sent_id]
             sent_predicted_relations = \
-                [(d, p, self.dependency.reverse_label_map[l]) for d, p, l in sent_predicted_relations]
+                [(d, p, self.dependency.reverse_label_map.get(l, 'dep')) for d, p, l in sent_predicted_relations]
             self.all_gold += len(rel_pairs)
             self.all_predicted += len(sent_predicted_relations)
             self.all_correct += len(set(rel_pairs).intersection(set(sent_predicted_relations)))

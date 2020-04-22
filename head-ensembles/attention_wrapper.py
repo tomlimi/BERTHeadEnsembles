@@ -41,6 +41,15 @@ class AttentionWrapper:
         metric(self.sentence_idcs,
                [sent_matrices[layer_idx, head_idx, :,:].mean(axis=0) for sent_matrices in self.matrices])
         return metric.result()
+    
+    def get_layer_head_matrices(self):
+        layer_head_matrices = list()
+        for l in range(self.layer_count):
+            head_matrices = list()
+            for h in range(self.head_count):
+                head_matrices.append([np.squeeze(sent_matrices[l,h,:,:]) for sent_matrices in self.matrices])
+            layer_head_matrices.append(head_matrices)
+        return layer_head_matrices
 
     def extract_trees(self, relation_heads_d2p, relation_heads_p2d, weights_d2p, weights_p2d, roots):
         extracted_unlabeled = list()
