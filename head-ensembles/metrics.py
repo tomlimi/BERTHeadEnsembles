@@ -49,7 +49,7 @@ class DepAcc(Metric):
             np.fill_diagonal(matrix, 0.)
             max_row = matrix.argmax(axis=1)
 
-            rel_pairs = self.dependency.relations[self.relation_label][sent_id]
+            rel_pairs = self.dependency.relations[sent_id][self.relation_label]
             if not self.dependent2parent:
                 rel_pairs = list(map(tuple, map(reversed, rel_pairs)))
             self.retrieved += sum([max_row[attending] == attended for attending, attended in rel_pairs])
