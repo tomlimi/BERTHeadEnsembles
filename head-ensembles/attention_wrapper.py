@@ -11,6 +11,7 @@ class AttentionWrapper:
     # Those values are used in all the experiments. Parameters could be superfluous.
     MAX_LEN = 1000  # maximum number of tokens in the sentence
     WITH_EOS = True  # whether attention matrix contain EOS token.
+    WITH_CLS = False # whether attention matrix contain CLS token.
     NO_SOFTMAX = False  # whether to conduct softmax on loaded attention matrices. Should be True for endev.
 
     def __init__(self, attention_file, tokens_grouped, selected_sentences=None):
@@ -26,14 +27,13 @@ class AttentionWrapper:
 
         self.preprocess_matrices(attention_loaded)
 
-    def calc_metric_single(self, metric):
-        metric_res = np.zeros((self.head_count, self.layer_count))
-        for h in range(self.head_count):
-            for l in range(self.layer_count):
+    def calc_metric_grid(self, metric):
+        metric_res = np.zeros((self.layer_count, self.head_count))
+        for l in range(self.layer_count):
+            for h in range(self.head_count):
                 metric.reset_state()
                 metric(self.sentence_idcs, [np.squeeze(sent_matrices[l,h,:,:]) for sent_matrices in self.matrices])
-                metric_res[h,l] = metric.result()
-
+                metric_res[l,h] = metric.result()
         return metric_res
 
     def calc_metric_ensemble(self, metric, layer_idx, head_idx):
@@ -41,16 +41,8 @@ class AttentionWrapper:
         metric(self.sentence_idcs,
                [sent_matrices[layer_idx, head_idx, :,:].mean(axis=0) for sent_matrices in self.matrices])
         return metric.result()
-    
-    def get_layer_head_matrices(self):
-        layer_head_matrices = list()
-        for l in range(self.layer_count):
-            head_matrices = list()
-            for h in range(self.head_count):
-                head_matrices.append([np.squeeze(sent_matrices[l,h,:,:]) for sent_matrices in self.matrices])
-            layer_head_matrices.append(head_matrices)
-        return layer_head_matrices
 
+    # TODO: remove tree extraction logic from wrapper
     def extract_trees(self, relation_heads_d2p, relation_heads_p2d, weights_d2p, weights_p2d, roots):
         extracted_unlabeled = list()
         extracted_labeled = list()
@@ -99,7 +91,7 @@ class AttentionWrapper:
 
     def check_wordpieces(self, item, attention_loaded):
         matrix_id = 'arr_' + str(item)
-        attention_rank = attention_loaded[matrix_id].shape[2] - int(self.WITH_EOS)
+        attention_rank = attention_loaded[matrix_id].shape[2] - int(self.WITH_EOS) - int(self.WITH_CLS)
         item_wordpieces_grouped = self.tokens_grouped[item]
         if item_wordpieces_grouped is None:
             print('Token mismatch sentence skipped', item, file=sys.stderr)
@@ -140,6 +132,8 @@ class AttentionWrapper:
             sent_matrices = np.array(attention_loaded[matrices_id])
             if self.WITH_EOS:
                 sent_matrices = sent_matrices[:,:,:-1, :-1]
+            if self.WITH_CLS:
+                sent_matrices = sent_matrices[:, :, 1:, 1:]
             # the max trick -- for each row subtract its max
             # from all of its components to get the values into (-inf, 0]
             if not self.NO_SOFTMAX:

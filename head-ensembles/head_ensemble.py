@@ -56,7 +56,7 @@ if __name__ == '__main__':
     ap.add_argument("tokens", type=str, help="Labels (tokens) separated by spaces")
     ap.add_argument("conll", type=str, help="Conll file for head selection.")
 
-    ap.add_argument("-m", "--metric", type=str, default="DepAcc", help="Metric  used ")
+    ap.add_argument("-m", "--metric", type=str, default="DepAcc", help="Metric used to find optimal head ensembles. ")
     ap.add_argument("-j", "--json", type=str, help="Output json with the heads")
     # other arguments
 
