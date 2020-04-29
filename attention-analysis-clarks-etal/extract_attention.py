@@ -1,7 +1,11 @@
 """Runs BERT over input data and writes out its attention maps to disk.
 The code originally comes from https://github.com/clarkkev/attention-analysis
 PLEASE NOTE:
-The only modification was to extract key and query vectors along the attention maps and attetntion matrices are not softmaxed!
+Modification were made for Head Ensmble project:
+- extract key and query vectors along the attention maps and
+- attetntion matrices are not softmaxed!
+- attentions are saved to .npz file
+- wordpiece tokens are saved to txt file
 """
 
 import argparse
@@ -144,10 +148,14 @@ def main():
     bpe_utils.make_attn_word_level(
         feature_dicts_with_attn, tokenizer, args.cased)
 
-  outpath = args.preprocessed_data_file.replace(".json", "")
-  outpath += "_akq.pkl"
+  base_outpath = args.preprocessed_data_file.replace(".json", "")
+  outpath = base_outpath + "_attentions"
+  
   print("Writing attention maps to {:}...".format(outpath))
-  utils.write_pickle(feature_dicts_with_attn, outpath)
+  np.savez(outpath, *[e["attns"][:,:,1:-1,1:-1] for e in feature_dicts_with_attn ])
+  outpath = base_outpath + "_source.txt"
+  with open(outpath, "w") as outfile:
+      outfile.writelines([' '.join(e["tokens"][1:-1]).replace(' ##', '@@ ') + '\n' for e in feature_dicts_with_attn ])
   print("Done!")
 
 
