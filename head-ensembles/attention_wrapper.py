@@ -2,7 +2,6 @@ import numpy as np
 import sys
 from itertools import chain
 from tqdm import tqdm
-from multiprocessing import Pool
 
 import networkx as nx
 from networkx.algorithms import tree

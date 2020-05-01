@@ -2,7 +2,7 @@ from udapi.core.block import Block
 
 
 class AttentionConvert(Block):
-	"""This block takes all prepositions (upos=ADP) and rehangs them above their parent."""
+	"""This block apply modification to UD annotation to  make them more similar to latent representation in BERT"""
 
 	@staticmethod
 	def __rehang_children(origparent, new_parent, udeprels_to_move):
@@ -34,7 +34,6 @@ class AttentionConvert(Block):
 					if sibling.udeprel == 'nsubj':
 						sibling.deprel = 'obj'
 				node.deprel = 'nsubj'
-				
 
 		for node in root.descendants():
 			if node.udeprel == 'conj':
