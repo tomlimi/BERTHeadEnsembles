@@ -14,7 +14,7 @@ We have created our custom block that performs conllu modifications, to use it:
 4. Run in a command line:
 
 ```
-udapy read.Conllu files=<path-to-conllu>  write.Conllu > <path-to-converted-conllu>
+udapy read.Conllu files=<path-to-conllu> ud.AttentionConvert write.Conllu > <path-to-converted-conllu>
 ```
 
 *Note that this step is optional. However, it is necessary to reproduce our results.*
@@ -49,6 +49,7 @@ The following optional arguments can also be added:
 * `--word_level`: Compute word-level instead of token-level attention (see Section 4.1 of the paper).
 
 The list of attention matrices will be saved to  `<path-to-your-data>_attentions.npz`. The file will be referred to as `<path-to-attentions>` in the next steps.
+
 Wordpiece tokenized sentences will be saved to `<path-to-your-data>_source.txt`.  The file will be referred to as `<path-to-wordpieces>` in the next steps.
 
 
