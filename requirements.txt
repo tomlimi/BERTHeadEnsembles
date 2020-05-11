@@ -1,3 +1,4 @@
-networkx
-numpy
-tqdm
+networkx==2.3
+numpy==1.17.2
+tqdm==4.36.1
+tensorflow==1.14.0
