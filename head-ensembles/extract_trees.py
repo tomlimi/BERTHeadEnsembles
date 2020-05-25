@@ -16,8 +16,9 @@ if __name__ == '__main__':
 	ap.add_argument("tokens", type=str, help="Labels (tokens) separated by spaces")
 	ap.add_argument("conll", type=str, help="Conll file for head selection.")
 	ap.add_argument("json", type=str, help="Json file with head ensemble")
-	# other arguments
 	
+	# other arguments
+	ap.add_argument("--report-result", type=str, default=None, help="File where to save the results.")
 	ap.add_argument("-s", "--sentences", nargs='*', type=int, default=None,
 	                help="Only use the specified sentences; 0-based")
 	
@@ -55,5 +56,10 @@ if __name__ == '__main__':
 	las_m = LAS(dependency)
 	las_m(bert_attns.sentence_idcs, extracted_labeled)
 	las_res = las_m.result()
-
-	print(f"UAS result for extracted tree: {uas_res}, LAS: {las_res}")
+	
+	if args.report_result:
+		with open(args.report_result, 'w') as res_file:
+			res_file.write(f"UAS: {uas_res}\n")
+			res_file.write(f"LAS: {las_res}\n")
+	else:
+		print(f"UAS result for extracted tree: {uas_res}, LAS: {las_res}")
