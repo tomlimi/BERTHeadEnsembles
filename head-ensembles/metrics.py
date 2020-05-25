@@ -56,6 +56,8 @@ class DepAcc(Metric):
             self.total += len(rel_pairs)
 
     def result(self):
+        if not self.total:
+            return 0.
         return self.retrieved / self.total
 
 
