@@ -97,6 +97,10 @@ class AttentionWrapper:
             return False
 
         item_wordpieces = list(chain.from_iterable(item_wordpieces_grouped))
+        if attention_rank <= 1:
+            print('Too short sentence, skipped', item, file=sys.stderr)
+            return False
+        
         # check maxlen
         if not len(item_wordpieces_grouped) <= self.MAX_LEN:
             print('Too long sentence, skipped', item, file=sys.stderr)
