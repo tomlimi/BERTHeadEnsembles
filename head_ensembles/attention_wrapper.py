@@ -9,9 +9,9 @@ from networkx.algorithms import tree
 class AttentionWrapper:
     # Those values are used in all the experiments. Parameters could be superfluous.
     MAX_LEN = 1000  # maximum number of tokens in the sentence
-    WITH_EOS = True  # whether attention matrix contain EOS token.
+    WITH_EOS = False  # whether attention matrix contain EOS token.
     WITH_CLS = False # whether attention matrix contain CLS token.
-    NO_SOFTMAX = False  # whether to conduct softmax on loaded attention matrices. Should be True for endev.
+    NO_SOFTMAX = False  # whether to conduct softmax on loaded attention matrices.
 
     def __init__(self, attention_file, tokens_grouped, selected_sentences=None):
 

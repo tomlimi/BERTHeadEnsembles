@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Runs BERT over input data and writes out its attention maps to disk.
 The code originally comes from https://github.com/clarkkev/attention-analysis
 PLEASE NOTE:
@@ -6,6 +7,7 @@ Modification were made for Head Ensmble project:
 - attetntion matrices are not softmaxed!
 - attentions are saved to .npz file
 - wordpiece tokens are saved to txt file
+- tokens and attentions don't include special tokens ([CLS], [SEP])
 """
 
 import argparse
@@ -101,14 +103,14 @@ def main():
                       help="Location of the pre-trained BERT model.")
   parser.add_argument("--cased", default=False, action='store_true',
                       help="Don't lowercase the input.")
-  parser.add_argument("--max_sequence_length", default=128, type=int,
+  parser.add_argument("--max-sequence-length", default=128, type=int,
                       help="Maximum input sequence length after tokenization "
                            "(default=128).")
-  parser.add_argument("--batch_size", default=16, type=int,
+  parser.add_argument("--batch-size", default=16, type=int,
                       help="Batch size when running BERT (default=16).")
   parser.add_argument("--debug", default=False, action='store_true',
                       help="Use tiny model for fast debugging.")
-  parser.add_argument("--word_level", default=False, action='store_true',
+  parser.add_argument("--word-level", default=False, action='store_true',
                       help="Get word-level rather than token-level attention.")
   args = parser.parse_args()
 

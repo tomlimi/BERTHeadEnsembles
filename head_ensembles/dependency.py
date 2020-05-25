@@ -43,7 +43,7 @@ class Dependency():
     CONLLU_HEAD = 6
     CONLLU_LABEL = 7
 
-    def __init__(self, conll_file, bert_wordpiece_file):
+    def __init__(self, conll_file, bert_wordpiece_file=None):
 
         self.tokens = []
         self.relations = []
@@ -52,7 +52,8 @@ class Dependency():
         self.wordpieces2tokens = []
 
         self.read_conllu(conll_file)
-        self.group_wordpieces(bert_wordpiece_file)
+        if bert_wordpiece_file:
+            self.group_wordpieces(bert_wordpiece_file)
 
     @classmethod
     def transform_label(cls, label):

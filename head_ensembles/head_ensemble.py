@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import numpy as np
 import json
@@ -81,7 +83,7 @@ if __name__ == '__main__':
             relation_label_directional = relation_label + '-' + direction
             head_ensembles[relation_label_directional] = HeadEnsemble(relation_label_directional, args.num_heads)
             print(f"Calculating metric for each head. Relation label: {relation_label_directional}")
-            metric_grid = bert_attns.calc_metric_single(metric)
+            metric_grid = bert_attns.calc_metric_grid(metric)
             heads_idcs = np.argsort(metric_grid, axis=None)[-HEADS_TO_CHECK:][::-1]
             for candidate_id in tqdm(heads_idcs, desc=f"Candidates for ensemble!"):
                 candidate = np.unravel_index(candidate_id, metric_grid.shape)

@@ -11,8 +11,7 @@ class AttentionConvert(Block):
 
 	def process_tree(self, root):
 		
-		# rearange copulas
-		# NOTE: 5
+		# rearrange copulas
 		udeprels_to_move = {'nsubj', 'aux', 'csubj', 'ccomp', 'xcomp', 'advcl',
 		                    'acl', 'parataxis', 'expl', 'punct', 'obj'}
 		for node in root.descendants():
@@ -27,17 +26,17 @@ class AttentionConvert(Block):
 				self.__rehang_children(origparent, node, udeprels_to_move)
 		
 		# change expletives to nominal subjects
-		# NOTE: 7
 		for node in root.descendants():
 			if node.deprel == 'expl' and node.precedes(node.parent):
 				for sibling in node.parent.children:
 					if sibling.udeprel == 'nsubj':
 						sibling.deprel = 'obj'
 				node.deprel = 'nsubj'
-
+				
+		# rehang conjunction
 		for node in root.descendants():
 			if node.udeprel == 'conj':
-				conj_parent = node.parent
+				# conj_parent = node.parent
 				# if conj_parent.udeprel == 'root' or conj_parent.parent.udeprel == 'root':
 				# 	pass
 				# else:

@@ -9,7 +9,7 @@ To install UDApi, follow the instruction from [UDApi](https://github.com/udapi/u
 We have created our custom block that performs conllu modifications, to use it:
 
 1. Clone the UDApi repository, 
-2. Copy the file `attentionconverte.py` to `udapi-python/udapi/block/ud`
+2. Copy the file `attentionconvert.py` to `udapi-python/udapi/block/ud`
 3. Follow the steps in _Install Udapi for developers_ for developers 
 4. Run in a command line:
 
@@ -39,7 +39,7 @@ after BERT wordpiece tokenization, attention maps will not be extracted for it.
 
 Attention extraction is run with
 ```
-python attention-analysis-clark-etal/extract_attention.py --preprocessed_data_file <path-to-your-data> --bert_dir <directory-containing-BERT-model> --max_sequence_length 256
+python attention-analysis-clark-etal/extract_attention.py --preprocessed-data-file <path-to-your-data> --bert_dir <directory-containing-BERT-model> --max-sequence-length 256
 ```
 The following optional arguments can also be added:
 * `--max_sequence_length`: Maximum input sequence length after tokenization (default is 128).
