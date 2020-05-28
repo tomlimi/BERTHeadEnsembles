@@ -1,5 +1,10 @@
 #!/bin/bash
-BERTDIR=$3
+source /home/limisiewicz/.virtualenvs/headensemble/bin/activate
+
+export PATH="/home/limisiewicz/udapi-python/bin:$PATH"
+export PYTHONPATH="/home/limisiewicz/udapi-python/:$PYTHONPATH"
+
+BERTDIR='/net/projects/bert/models/multilingual-base-uncased/'
 
 PREFIXPROCESS=$1
 PREFIXEVAL=$2
@@ -13,15 +18,15 @@ RESULTFILE=$RESULTDIR/$PREFIXEVAL
 
 
 # prepare attention matrices
-python3 ../head-ensembles/conllu2json.py "${PROCESSFILE}.conllu" "${PROCESSFILE}.json"
-python3 ../attention-analysis-clark-etal/extract_attention.py --preprocessed-data-file "${PROCESSFILE}.json" --bert-dir $BERTDIR --max-sequence-length 256
-
-python3 ../head-ensembles/conllu2json.py "${EVALFILE}.conllu" "${EVALFILE}.json"
-python3 ../attention-analysis-clark-etal/extract_attention.py --preprocessed-data-file "${EVALFILE}.json" --bert-dir $BERTDIR --max-sequence-length 256
+#python3 ../head-ensembles/conllu2json.py "${PROCESSFILE}.conllu" "${PROCESSFILE}.json"
+#python3 ../attention-analysis-clark-etal/extract_attention.py --preprocessed-data-file "${PROCESSFILE}.json" --bert-dir $BERTDIR --max-sequence-length 512
+#
+#python3 ../head-ensembles/conllu2json.py "${EVALFILE}.conllu" "${EVALFILE}.json"
+#python3 ../attention-analysis-clark-etal/extract_attention.py --preprocessed-data-file "${EVALFILE}.json" --bert-dir $BERTDIR --max-sequence-length 512
 
 # convert conllus
 udapy read.Conllu files="${PROCESSFILE}.conllu" ud.AttentionConvert write.Conllu > "${PROCESSFILE}-conv.conllu"
-
+#
 udapy read.Conllu files="${EVALFILE}.conllu" ud.AttentionConvert write.Conllu > "${EVALFILE}-conv.conllu"
 
 # select heads
@@ -34,10 +39,10 @@ python3 ../head-ensembles/extract_trees.py "${EVALFILE}_attentions.npz" "${EVALF
 # optional cleanup
 rm "${PROCESSFILE}.json"
 rm "${PROCESSFILE}-conv.conllu"
-rm "${PROCESSFILE}_attentions.npz"
-rm "${PROCESSFILE}_source.txt"
-
+#rm "${PROCESSFILE}_attentions.npz"
+#rm "${PROCESSFILE}_source.txt"
+#
 rm "${EVALFILE}.json"
 rm "${EVALFILE}-conv.conllu"
-rm "${EVALFILE}_attentions.npz"
-rm "${EVALFILE}_source.txt"
+#rm "${EVALFILE}_attentions.npz"
+#rm "${EVALFILE}_source.txt"

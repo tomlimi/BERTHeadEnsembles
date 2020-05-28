@@ -35,6 +35,8 @@ class Example(object):
       else:
         text = " ".join(features["words"])
       self.tokens = ["[CLS]"] + tokenizer.tokenize(text) + ["[SEP]"]
+      
+    self.tokens = self.tokens[:max_sequence_length]
 
     self.input_ids = tokenizer.convert_tokens_to_ids(self.tokens)
     self.segment_ids = [0] * len(self.tokens)
