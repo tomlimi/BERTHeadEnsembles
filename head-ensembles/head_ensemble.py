@@ -72,6 +72,8 @@ if __name__ == '__main__':
     ap.add_argument("-m", "--metric", type=str, default="DepAcc", help="Metric used to find optimal head ensembles.")
     ap.add_argument('-n', '--num-heads', type=int, default=4, help="Maximal number of heads in one ensemble")
     ap.add_argument("-j", "--json", type=str, default=None, help="Json with the head ensembles")
+    ap.add_argument("-o", "--offsets", type=str, default=None, help="Json with offset modes to calculate the baseline")
+
     ap.add_argument("-e", "--evaluate-only", action="store_true", help="Whether to only evaluate (preomputed Json with head ensembles needed)")
     # other arguments
     ap.add_argument("--report-result", type=str, default=None, help="File where to save the results.")
@@ -82,6 +84,8 @@ if __name__ == '__main__':
 
     dependency_tree = Dependency(args.conll, args.tokens)
     bert_attns = AttentionWrapper(args.attentions, dependency_tree.wordpieces2tokens, args.sentences)
+
+    offset_modes = None
     
     if args.evaluate_only:
         if not args.json:
@@ -89,6 +93,9 @@ if __name__ == '__main__':
         with open(args.json, 'r') as inj:
             head_ensembles = json.load(inj)
         head_ensembles = {rl: HeadEnsemble.from_dict(**he_dict) for rl, he_dict in head_ensembles.items()}
+        if args.offsets:
+            with open(args.offsets, 'r') as inj:
+                offset_modes = json.load(inj)
         
     else:
         head_ensembles = dict()
@@ -131,6 +138,10 @@ if __name__ == '__main__':
     if not args.evaluate_only and args.json:
         with open(args.json, 'w') as outj:
             json.dump({rl: he.__dict__ for rl, he in head_ensembles.items()}, fp=outj)
+
+        if args.offsets:
+            with open(args.offsets, 'w') as outj:
+                json.dump(dependency_tree.calc_offset_modes(), fp=outj)
             
     if args.report_result:
         with open(args.report_result, 'w') as outr:
@@ -143,3 +154,19 @@ if __name__ == '__main__':
             outr.write('\n')
             outr.write(f'Clausal mean:\t{clausal_sum/len(clausal_relations)/2.}\n')
             outr.write(f'Non Cluasal mean:\t{non_clausal_sum / len(non_clausal_relations) / 2.}\n')
+
+        positional_baseline = dependency_tree.eval_positional_baseline(offset_modes)
+        with open(args.report_restult + '.baseline', 'w') as outr:
+            sum_clausal_baseline = 0.
+            sum_non_clausal_baseline = 0.
+            outr.write('labe\tpositional_baseline\n')
+            for rel in clausal_relations:
+                outr.write(f"{rel}\t{positional_baseline[rel]}")
+                sum_clausal_baseline += positional_baseline[rel]
+            outr.write('\n')
+            for rel in non_clausal_relations:
+                outr.write(f"{rel}\t{positional_baseline[rel]}")
+                sum_non_clausal_baseline += positional_baseline[rel]
+            outr.write('\n')
+            outr.write(f'Clausal mean:\t{clausal_sum/len(clausal_relations)}\n')
+            outr.write(f'Non Cluasal mean:\t{non_clausal_sum / len(non_clausal_relations)}\n')

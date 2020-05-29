@@ -148,6 +148,30 @@ class Dependency():
                 self.wordpieces2tokens.append(grouped_ids)
             idx += 1
 
+    def calc_offset_modes(self):
+        offsets = defaultdict(list)
+        for sent_relations in self.relations:
+            for rel, dep_edge in sent_relations.items():
+                dep, head = dep_edge
+                if head != -1:
+                    offsets[rel].append(head - dep)
+
+        offset_modes = {rel: max(set(off), key=off.count) for rel, off in offsets.items()}
+        return offset_modes
+
+    def eval_positional_baseline(self, offset_modes=None):
+        offset_modes = offset_modes or self.calc_offset_modes()
+
+        results = dict(list)
+
+        for sent_relations in self.relations:
+            for rel, dep_edge in sent_relations.items():
+                dep, head = dep_edge
+                if head != -1:
+                    results[rel].append(head - dep == offset_modes[rel])
+
+        return {rel: sum(res)/len(res) for rel, res in results.items()}
+
 
 # def define_labels(consider_directionality):
 # 	labels_raw = list(set(label_map.values())) + ['all', 'other']
