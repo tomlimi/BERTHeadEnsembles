@@ -151,10 +151,10 @@ class Dependency():
     def calc_offset_modes(self):
         offsets = defaultdict(list)
         for sent_relations in self.relations:
-            for rel, dep_edge in sent_relations.items():
-                dep, head = dep_edge
-                if head != -1:
-                    offsets[rel].append(head - dep)
+            for rel, dep_edges in sent_relations.items():
+                for dep, head in dep_edges:
+                    if head != -1:
+                        offsets[rel].append(head - dep)
 
         offset_modes = {rel: max(set(off), key=off.count) for rel, off in offsets.items()}
         return offset_modes
@@ -162,13 +162,13 @@ class Dependency():
     def eval_positional_baseline(self, offset_modes=None):
         offset_modes = offset_modes or self.calc_offset_modes()
 
-        results = dict(list)
+        results = defaultdict(list)
 
         for sent_relations in self.relations:
-            for rel, dep_edge in sent_relations.items():
-                dep, head = dep_edge
-                if head != -1:
-                    results[rel].append(head - dep == offset_modes[rel])
+            for rel, dep_edges in sent_relations.items():
+                for dep, head in dep_edges:
+                    if head != -1:
+                        results[rel].append(head - dep == offset_modes.get(rel, 0))
 
         return {rel: sum(res)/len(res) for rel, res in results.items()}
 
