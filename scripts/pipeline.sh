@@ -17,7 +17,7 @@ udapy read.Conllu files="${PROCESSFILE}.conllu" ud.AttentionConvert write.Conllu
 python3  ../head-ensembles/head_ensemble.py "${PROCESSFILE}_attentions.npz" "${PROCESSFILE}_source.txt" "${PROCESSFILE}-conv.conllu" -j "${PROCESSFILE}_head-ensembles.json"
 
 #extract trees
-#python3 ../head-ensembles/extract_trees.py "${PROCESSFILE}_attentions.npz" "${PROCESSFILE}_source.txt" "${PROCESSFILE}.conllu" "${PROCESSFILE}_head-ensembles.json"
+python3 ../head-ensembles/extract_trees.py "${PROCESSFILE}_attentions.npz" "${PROCESSFILE}_source.txt" "${PROCESSFILE}.conllu" "${PROCESSFILE}_head-ensembles.json"
 
 # optional cleanup
 #rm "${PROCESSFILE}.json"

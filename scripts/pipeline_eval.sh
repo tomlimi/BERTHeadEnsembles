@@ -4,7 +4,7 @@ source /home/limisiewicz/.virtualenvs/headensemble/bin/activate
 export PATH="/home/limisiewicz/udapi-python/bin:$PATH"
 export PYTHONPATH="/home/limisiewicz/udapi-python/:$PYTHONPATH"
 
-BERTDIR='/net/projects/bert/models/multilingual-base-uncased/'
+
 
 PREFIXPROCESS=$1
 PREFIXEVAL=$2

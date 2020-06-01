@@ -10,6 +10,36 @@ from attention_wrapper import AttentionWrapper
 
 DEPACC_THRESHOLD = 0.6
 
+
+def print_tikz(prediction_edges, sent_idcs, dependency , out_tikz_file):
+	''' Turns edge sets on word (nodes) into tikz dependency LaTeX. '''
+	uas_m = UAS(dependency)
+	with open(out_tikz_file, 'w') as fout:
+		for sent_preds, sid in zip(prediction_edges, sent_idcs):
+			tokens = dependency.tokens[sid]
+			uas_m.reset_state()
+			uas_m([sid],[sent_preds])
+			if len(tokens) < 10 and uas_m.result() > 0.6:
+			
+				sent_golds = dependency.unlabeled_relations[sid]
+			
+				string = """\\begin{dependency}[hide label, edge unit distance=.5ex]
+		  \\begin{deptext}[column sep=0.05cm]
+		  """
+				string += "\\& ".join([x.replace('$', '\$').replace('&', '+') for x in tokens]) + " \\\\" + '\n'
+				string += "\\end{deptext}" + '\n'
+				for i_index, j_index in sent_golds:
+					if i_index >= 0 and j_index >= 0:
+						string += '\\depedge{{{}}}{{{}}}{{{}}}\n'.format(i_index + 1, j_index + 1, '.')
+				for i_index, j_index in sent_preds:
+					if i_index >= 0 and j_index >= 0:
+						string += '\\depedge[edge style={{blue!60!}}, edge below]{{{}}}{{{}}}{{{}}}\n'.format(i_index +1,
+					                                                                                     j_index +1, '.')
+				string += '\\end{dependency}\n'
+				fout.write('\n\n')
+				fout.write(string)
+
+
 if __name__ == '__main__':
 	ap = argparse.ArgumentParser()
 	ap.add_argument("attentions", type=str, help="NPZ file with attentions")
@@ -61,5 +91,9 @@ if __name__ == '__main__':
 		with open(args.report_result, 'w') as res_file:
 			res_file.write(f"UAS: {uas_res}\n")
 			res_file.write(f"LAS: {las_res}\n")
+		
+		print_tikz(extracted_unlabeled, bert_attns.sentence_idcs, dependency, args.report_result+".tikz")
+		
+		
 	else:
 		print(f"UAS result for extracted tree: {uas_res}, LAS: {las_res}")
