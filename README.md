@@ -8,7 +8,7 @@ Our modification of the Universal Dependencies annotation is applied with UDApi.
 To install UDApi, follow the instruction from [UDApi](https://github.com/udapi/udapi-python). 
 We have created our custom block that performs conllu modifications, to use it:
 
-1. Clone the UDApi repository, 
+1. Clone the UDApi repository 
 2. Copy the file `attentionconvert.py` to `udapi-python/udapi/block/ud`
 3. Follow the steps in _Install Udapi for developers_ for developers 
 4. Run in a command line:
@@ -93,7 +93,27 @@ The results are printed to standard output.
 We use different conllu file for head ensemble selection (*EuroParl* with UD modification) and dependency tree  (*PUD* w/o UD modifications)
 
 Other arguments for the script:
-* `--sentences`: indices of the sentences used for selection. 
+* `--sentences`: indices of the sentences used for selection.
+
+## End-to-End Pipeline
+
+0. Install required packages by pip. Follow instruction in *Universal Dependencies Modification* to install [UDApi](https://github.com/udapi/udapi-python) with our custom block.
+
+2. Download conllu files from [Universal Dependencies web site](https://universaldependencies.org). For instance, for Japanese
+ GSD train treebank `ja_gsd-ud-train.conll` for head selection and `ja_pud-ud-test.conllu` for evaluation. Save the files to `resources` directory.
+
+3. Download BERT model from [BERT GitHub](https://github.com/google-research/bert) to `<directory-containing-BERT-model>`. Then extract the attention matrices by running bash script:
+
+    ```
+    source scripts/extract_attention.sh ja_gsd-ud-train ja_pud-ud-test <directory-containing-BERT-model>
+    ```
+4. Run head selection and tree extraction by running bash script. Results will be saved in `results` directory:
+
+    ```
+    source scripts/pipeline_eval.sh ja_gsd-ud-train ja_pud-ud-test
+    ```
+
+
 
 ## Citation
 

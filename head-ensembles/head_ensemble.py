@@ -30,6 +30,12 @@ class HeadEnsemble():
         return he_object
 
     def consider_candidate(self, candidate, metric, attn_wrapper):
+        """ Checks whether given candidate head should be included in the tuple
+        Parameters:
+            candidate (tuple): (layer_index, head_index) of the candidate head
+            metric (Metric): metric to optimize
+            attn_wrapper (AttentionWrapper):
+        """
         candidate_lid, candidate_hid = candidate
         if not self.ensemble:
             self.max_metric = float(attn_wrapper.calc_metric_ensemble(metric, [candidate_lid], [candidate_hid]))
@@ -94,12 +100,12 @@ if __name__ == '__main__':
         head_ensembles = dict()
 
     results = defaultdict(dict)
-    clausal_relations = ('adj-modifier', 'adv-modifier', 'auxiliary', 'compound', 'conjunct', 'determiner',
+    non_clausal_relations = ('adj-modifier', 'adv-modifier', 'auxiliary', 'compound', 'conjunct', 'determiner',
                          'noun-modifier', 'num-modifier', 'object', 'subject', 'case', 'mark')
-    clausal_sum = 0.
-
-    non_clausal_relations = ('adj-clause', 'adv-clause', 'clausal', 'clausal-subject', 'parataxis')
     non_clausal_sum = 0.
+
+    clausal_relations = ('adj-clause', 'adv-clause', 'clausal', 'clausal-subject', 'parataxis')
+    clausal_sum = 0.
     
     metric = None
     for direction in ['d2p', 'p2d']:

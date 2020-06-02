@@ -1,10 +1,7 @@
 #!/bin/bash
-
-
-BERTDIR='/net/projects/bert/models/multilingual-base-uncased/'
-
 PREFIXPROCESS=$1
 PREFIXEVAL=$2
+BERTDIR=$3
 RESOURCESDIR='../resources'
 
 

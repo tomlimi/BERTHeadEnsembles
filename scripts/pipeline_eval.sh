@@ -1,11 +1,4 @@
 #!/bin/bash
-source /home/limisiewicz/.virtualenvs/headensemble/bin/activate
-
-export PATH="/home/limisiewicz/udapi-python/bin:$PATH"
-export PYTHONPATH="/home/limisiewicz/udapi-python/:$PYTHONPATH"
-
-
-
 PREFIXPROCESS=$1
 PREFIXEVAL=$2
 RESOURCESDIR='../resources'

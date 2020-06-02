@@ -6,7 +6,11 @@ import json
 
 from dependency import Dependency
 from metrics import UAS, LAS
+from tqdm import tqdm
 from attention_wrapper import AttentionWrapper
+
+import networkx as nx
+from networkx.algorithms import tree
 
 DEPACC_THRESHOLD = 0.6
 
@@ -20,9 +24,9 @@ def print_tikz(prediction_edges, sent_idcs, dependency , out_tikz_file):
 			uas_m.reset_state()
 			uas_m([sid],[sent_preds])
 			if len(tokens) < 10 and uas_m.result() > 0.6:
-			
+
 				sent_golds = dependency.unlabeled_relations[sid]
-			
+
 				string = """\\begin{dependency}[hide label, edge unit distance=.5ex]
 		  \\begin{deptext}[column sep=0.05cm]
 		  """
@@ -34,10 +38,69 @@ def print_tikz(prediction_edges, sent_idcs, dependency , out_tikz_file):
 				for i_index, j_index in sent_preds:
 					if i_index >= 0 and j_index >= 0:
 						string += '\\depedge[edge style={{blue!60!}}, edge below]{{{}}}{{{}}}{{{}}}\n'.format(i_index +1,
-					                                                                                     j_index +1, '.')
+																											  j_index +1, '.')
 				string += '\\end{dependency}\n'
 				fout.write('\n\n')
 				fout.write(string)
+
+
+
+def extract_trees(bert_attns, relation_heads_d2p, relation_heads_p2d, weights_d2p, weights_p2d, roots):
+	"""Dependency extraction from BERT attenions
+	Parameters:
+		bert_attns (AttentionWrapper): object storing attention matrices and considered sentence indices
+		relation_heads_d2p (dict): maps relation labels to list of tuples (layer_idx, head_idx) of heads selected in direction dependent -> parent
+		relation_heads_p2d (dict): the same as above but in direction parent -> dependent
+		weights_d2p (dict): maps relation label to metric of selected head ensemble in in direction dependent -> parent
+		weights_p2d (dict): the same as above but in direction parent -> dependent
+	Returns:
+		extracted_unlabeled: list of tuples of extracted dependency relations (dependent_idx, parent_idx)
+		extracted_unlabeled: list of tuples of extracted dependency relations (dependent_idx, parent_idx, relation_label)
+	"""
+	extracted_unlabeled = list()
+	extracted_labeled = list()
+	for idx, sent_idx in tqdm(enumerate(bert_attns.sentence_idcs), desc='Extracting trees from matrices'):
+		root = roots[sent_idx]
+		dependency_graph = nx.MultiDiGraph()
+		dependency_graph.add_nodes_from(range(len(bert_attns.tokens_grouped[sent_idx])))
+
+		edge2relation_label = dict()
+		for relation in relation_heads_d2p.keys():
+
+			layer_idx_d2p, head_idx_d2p = zip(*relation_heads_d2p[relation])
+			ensemble_matrix_d2p = bert_attns.matrices[idx][layer_idx_d2p, head_idx_d2p, :, :].mean(axis=0).transpose()
+			ensemble_matrix_d2p[:, root] = 0.001
+			np.fill_diagonal(ensemble_matrix_d2p, 0.001)
+			ensemble_matrix_d2p = np.clip(ensemble_matrix_d2p, 0.001, 0.999)
+
+			layer_idx_p2d, head_idx_p2d = zip(*relation_heads_p2d[relation])
+			ensemble_matrix_p2d = bert_attns.matrices[idx][layer_idx_p2d, head_idx_p2d, :, :].mean(axis=0)
+			ensemble_matrix_p2d[:, root] = 0.001
+			np.fill_diagonal(ensemble_matrix_p2d, 0.001)
+			ensemble_matrix_p2d = np.clip(ensemble_matrix_p2d, 0.001, 0.999)
+
+			weight_p2d = weights_p2d[relation] ** 5
+			weight_d2p = weights_d2p[relation] ** 5
+			ensemble_matrix = (weight_d2p * np.log(ensemble_matrix_d2p) + weight_p2d * np.log(ensemble_matrix_p2d)) / (
+						weight_d2p + weight_p2d)
+
+			ensemble_graph = nx.from_numpy_matrix(ensemble_matrix, create_using=nx.DiGraph)
+
+			# Unfortunately this is necessary, because netwokx multigraph loses information about edges
+			for u, v, d in ensemble_graph.edges(data=True):
+				edge2relation_label[(u, v, d['weight'])] = relation
+
+			dependency_graph.add_edges_from(ensemble_graph.edges(data=True), label=relation)
+
+		dependency_aborescene = tree.branchings.maximum_spanning_arborescence(dependency_graph)
+
+		extracted_unlabeled.append(
+			[(dep, parent) for parent, dep in dependency_aborescene.edges(data=False)] + [(root, -1)])
+		extracted_labeled.append([(dep, parent, edge2relation_label[(parent, dep, edge_data['weight'])])
+								  for parent, dep, edge_data in dependency_aborescene.edges(data=True)] + [
+									 (root, -1, 'root')])
+
+	return extracted_unlabeled, extracted_labeled
 
 
 if __name__ == '__main__':
@@ -77,7 +140,7 @@ if __name__ == '__main__':
 		depacc_p2d[relation] = head_ensembles[relation + '-p2d']['max_metric']
 		
 	bert_attns = AttentionWrapper(args.attentions, dependency.wordpieces2tokens, args.sentences)
-	extracted_unlabeled, extracted_labeled = bert_attns.extract_trees(ensembles_d2p, ensembles_p2d, depacc_d2p, depacc_p2d, dependency.roots)
+	extracted_unlabeled, extracted_labeled = extract_trees(bert_attns, ensembles_d2p, ensembles_p2d, depacc_d2p, depacc_p2d, dependency.roots)
 	
 	uas_m = UAS(dependency)
 	uas_m(bert_attns.sentence_idcs, extracted_unlabeled)

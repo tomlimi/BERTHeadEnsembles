@@ -28,7 +28,7 @@ class Metric:
 class DepAcc(Metric):
 
     def __init__(self, dependency, relation_label, dependent2parent=True):
-
+        """ Dependency accuracy for a given relation label and direction. """
         self.relation_label = relation_label
         self.dependent2parent = dependent2parent
 
@@ -37,6 +37,7 @@ class DepAcc(Metric):
         super().__init__(dependency)
 
     def __call__(self, sent_idcs, matrices):
+        """ Takes indices of sentences in parsed dependency and the list of corresponding matrices."""
         for sent_id, matrix in zip(sent_idcs, matrices):
             self.update_state(sent_id, matrix)
 
@@ -62,7 +63,7 @@ class DepAcc(Metric):
 
 
 class UAS(Metric):
-
+    """ Unlabeled Attachment Score """
     def __init__(self, dependency):
         self.all_correct = 0
         self.all_predicted = 0
@@ -92,6 +93,7 @@ class UAS(Metric):
 
 
 class LAS(Metric):
+    """ Labeled Attachment Score """
     def __init__(self, dependency):
         self.all_correct = 0
         self.all_predicted = 0

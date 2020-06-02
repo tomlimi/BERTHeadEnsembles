@@ -3,8 +3,6 @@ import sys
 from itertools import chain
 from tqdm import tqdm
 
-import networkx as nx
-from networkx.algorithms import tree
 
 class AttentionWrapper:
     # Those values are used in all the experiments. Parameters could be superfluous.
@@ -41,49 +39,6 @@ class AttentionWrapper:
                [sent_matrices[layer_idx, head_idx, :,:].mean(axis=0) for sent_matrices in self.matrices])
         return metric.result()
 
-    # TODO: remove tree extraction logic from wrapper
-    def extract_trees(self, relation_heads_d2p, relation_heads_p2d, weights_d2p, weights_p2d, roots):
-        extracted_unlabeled = list()
-        extracted_labeled = list()
-        for idx, sent_idx in tqdm(enumerate(self.sentence_idcs), desc= 'Extracting trees from matrices'):
-            root = roots[sent_idx]
-            dependency_graph = nx.MultiDiGraph()
-            dependency_graph.add_nodes_from(range(len(self.tokens_grouped[sent_idx])))
-
-            edge2relation_label = dict()
-            for relation in relation_heads_d2p.keys():
-
-                layer_idx_d2p, head_idx_d2p = zip(*relation_heads_d2p[relation])
-                ensemble_matrix_d2p = self.matrices[idx][layer_idx_d2p, head_idx_d2p,:,:].mean(axis=0).transpose()
-                ensemble_matrix_d2p[:, root] = 0.001
-                np.fill_diagonal(ensemble_matrix_d2p, 0.001)
-                ensemble_matrix_d2p = np.clip(ensemble_matrix_d2p, 0.001, 0.999)
-
-                layer_idx_p2d, head_idx_p2d = zip(*relation_heads_p2d[relation])
-                ensemble_matrix_p2d = self.matrices[idx][layer_idx_p2d, head_idx_p2d, :, :].mean(axis=0)
-                ensemble_matrix_p2d[:,root] = 0.001
-                np.fill_diagonal(ensemble_matrix_p2d, 0.001)
-                ensemble_matrix_p2d = np.clip(ensemble_matrix_p2d, 0.001, 0.999)
-
-                weight_p2d = weights_p2d[relation] ** 5
-                weight_d2p = weights_d2p[relation] ** 5
-                ensemble_matrix = (weight_d2p * np.log(ensemble_matrix_d2p) + weight_p2d * np.log(ensemble_matrix_p2d)) / (weight_d2p + weight_p2d)
-
-                ensemble_graph = nx.from_numpy_matrix(ensemble_matrix, create_using=nx.DiGraph)
-
-                # Unfortunately this is necessary, because netwokx multigraph loses information about edges
-                for u, v, d in ensemble_graph.edges(data=True):
-                    edge2relation_label[(u, v, d['weight'])] = relation
-
-                dependency_graph.add_edges_from(ensemble_graph.edges(data=True), label=relation)
-
-            dependency_aborescene = tree.branchings.maximum_spanning_arborescence(dependency_graph)
-
-            extracted_unlabeled.append([(dep, parent) for parent, dep in dependency_aborescene.edges(data=False)] + [(root, -1)])
-            extracted_labeled.append([(dep, parent, edge2relation_label[(parent, dep, edge_data['weight'])])
-                                      for parent, dep, edge_data in dependency_aborescene.edges(data=True)] + [(root, -1, 'root')])
-
-        return extracted_unlabeled, extracted_labeled
 
     def __getitem__(self, idx):
         return self.sentence_idcs[idx], self.matrices[idx]
