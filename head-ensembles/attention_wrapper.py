@@ -11,7 +11,7 @@ class AttentionWrapper:
     WITH_CLS = False # whether attention matrix contain CLS token.
     NO_SOFTMAX = False  # whether to conduct softmax on loaded attention matrices.
 
-    def __init__(self, attention_file, tokens_grouped, selected_sentences=None):
+    def __init__(self, attention_file, tokens_grouped, selected_sentences=None, whole_words=False):
 
         # loads all the attention matrices and tokens
         attention_loaded = np.load(attention_file)
@@ -21,6 +21,7 @@ class AttentionWrapper:
         self.matrices = list()
         self.tokens_grouped = tokens_grouped
         self.sentence_idcs = selected_sentences or list(range(len(attention_loaded.files)))
+        self.whole_words = whole_words
 
         self.preprocess_matrices(attention_loaded)
 
@@ -39,9 +40,12 @@ class AttentionWrapper:
                [sent_matrices[layer_idx, head_idx, :,:].mean(axis=0) for sent_matrices in self.matrices])
         return metric.result()
 
-
     def __getitem__(self, idx):
         return self.sentence_idcs[idx], self.matrices[idx]
+    
+    def __iter__(self):
+        for sent_id, mats in zip(self.sentence_idcs, self.matrices):
+            yield sent_id, mats
 
     def check_wordpieces(self, item, attention_loaded):
         matrix_id = 'arr_' + str(item)
