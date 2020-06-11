@@ -66,7 +66,7 @@ class AttentionWrapper:
             return False
         # NOTE sentences truncated to 64 tokens
         if len(item_wordpieces) != attention_rank:
-            print('Too long sentence, skipped', item, file=sys.stderr)
+            print('Sentence does not match attention rank, skipped', item, file=sys.stderr)
             return False
         return True
 

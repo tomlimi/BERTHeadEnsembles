@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     ap.add_argument("-layer_idcs", nargs="*", type=int, default=[5, 3], help = "layer indices to plot")
     ap.add_argument("-head_idcs", nargs="*", type=int, default=[4, 9], help="head indices to plot")
-    ap.add_argument("-s", "--sentences", nargs='*', type=int, default=range(10), help="Only use the specified sentences; 0-based")
+    ap.add_argument("-s", "--sentences", nargs='*', type=int, default=list(range(10)), help="Only use the specified sentences; 0-based")
     
     ap.add_argument("-vis-dir", type=str, default="../results", help="Directory where to save head visualizations")
    
